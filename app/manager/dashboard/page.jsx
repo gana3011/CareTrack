@@ -1,5 +1,6 @@
 'use client';
-import { useEffect } from "react";
+
+import NavBar from "@/components/NavBar";
 import axios from "axios";
 
 const page = () => {
@@ -13,6 +14,7 @@ const page = () => {
   }
   return (
     <>
+    <NavBar />
     <div>Manger route</div>
     <button onClick={fetchApiData}>Fetch</button>
     </>
