@@ -16,7 +16,7 @@ export async function middleware(request) {
   // Handle home page differently - redirect authenticated users to their dashboard
   if (pathname === "/") {
     try {
-      const session = await auth0.getSession(request);
+      const session = await auth0.getSession();
       if (session) {
         const token = session.tokenSet.accessToken;
         const decoded = jwtDecode(token);
@@ -36,8 +36,6 @@ export async function middleware(request) {
 
   try {
     const session = await auth0.getSession(request);
-    console.log("Middleware - Session:", session ? "exists" : "not found");
-    console.log("Middleware - Pathname:", pathname);
   
     if (!session) {
       console.log("No session, redirecting to login");
@@ -47,8 +45,6 @@ export async function middleware(request) {
     const token = session.tokenSet.accessToken;
     const decoded = jwtDecode(token);
     const roles = decoded["https://healthcare.com/roles"] || [];
-    console.log("Middleware - Decoded roles:", roles);
-    console.log("Middleware - Full decoded token:", decoded);
 
     // Check if user is already on their correct dashboard
     if (roles.includes("manager") && pathname.startsWith("/manager")) {

@@ -10,15 +10,6 @@ import axios from 'axios';
 export default function Index() {
   return (
     <>
-      {/* {!isLoading && !user && (
-                <a
-                  href="/auth/login"
-                  className="btn btn-primary btn-block"
-                  tabIndex={0}
-                  testId="navbar-login-mobile">
-                  Log in
-                </a>
-      )}; */}
       <NavBar />
     </>
   );
