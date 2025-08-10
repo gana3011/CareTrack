@@ -6,6 +6,6 @@ const LeafMap = dynamic(() => import("./LeafMap").then(mod => mod.LeafMap), {
   ssr: false,
 });
 
-export default function LeafMapClient(props) {
-  return <LeafMap {...props} />;
+export default function LeafMapClient() {
+  return <LeafMap  />;
 }

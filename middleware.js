@@ -13,6 +13,11 @@ export async function middleware(request) {
     return authRes;
   }
 
+  // Allow API routes to pass through without authentication
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // Handle home page differently - redirect authenticated users to their dashboard
   if (pathname === "/") {
     try {
@@ -38,10 +43,8 @@ export async function middleware(request) {
     const session = await auth0.getSession(request);
   
     if (!session) {
-      console.log("No session, redirecting to login");
       return NextResponse.redirect(`${request.nextUrl.origin}/auth/login`);
     }
-
     const token = session.tokenSet.accessToken;
     const decoded = jwtDecode(token);
     const roles = decoded["https://healthcare.com/roles"] || [];

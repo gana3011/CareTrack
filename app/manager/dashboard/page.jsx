@@ -61,7 +61,7 @@ const page = () => {
             {/* <Map /> */}
             
           </div>
-          <LeafMapClient center={{ lng: -0.1278, lat: 51.5074 }} locations={locations}/>
+          <LeafMapClient />
         </Content>
         <Footer style={{ textAlign: 'center' }}>
           Ant Design ©{new Date().getFullYear()} Created by Ant UED

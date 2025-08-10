@@ -41,7 +41,6 @@ export const LeafMap = () => {
         }}
       >
         <MapContainer
-          center={center}
           zoom={13}
           minZoom={5}
           zoomControl={false}
