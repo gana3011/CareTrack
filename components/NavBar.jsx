@@ -85,8 +85,7 @@ const NavBar = () => {
                 <a
                   href="/auth/login"
                   className="btn btn-primary btn-block"
-                  tabIndex={0}
-                  testId="navbar-login-mobile">
+                  tabIndex={0}>
                   Log in
                 </a>
               </Nav>
@@ -120,8 +119,7 @@ const NavBar = () => {
                   <a
                     href="/auth/logout"
                     className="btn btn-link p-0"
-                    icon="power-off"
-                    testId="navbar-logout-mobile">
+                    icon="power-off">
                     Log out
                   </a>
                 </NavItem>
