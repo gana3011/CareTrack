@@ -19,9 +19,8 @@ const SelectedLocation = ({ center }) => {
   return null;
 };
 
-export const LeafMap = memo(({ center, locations }) => {
+export const LeafMap = () => {
   const [mapType, setMapType] = useState("roadmap");
-  const [selectedLocation, setSelectedLocation] = useState(undefined);
   const getUrl = () => {
     const mapTypeUrls = {
       roadmap: "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}",
@@ -32,20 +31,6 @@ export const LeafMap = memo(({ center, locations }) => {
     return mapTypeUrls[mapType];
   };
 
-  const renderMarks = () => {
-    return locations.map((location) => (
-      <div key={location.id}>
-        <Marker
-          position={{ lat: location.lat, lng: location.lng }}
-          eventHandlers={{
-            click: () => {
-              setSelectedLocation(location);
-            },
-          }}
-        />
-      </div>
-    ));
-  };
   return (
     <>
       <div
@@ -64,8 +49,6 @@ export const LeafMap = memo(({ center, locations }) => {
           style={{ width: "100%", height: "100%" }}
         >
           <TileLayer url={getUrl()} />
-          {selectedLocation && <SelectedLocation center={selectedLocation} />}
-          {renderMarks()}
           <ZoomControl position="topright" />
           <LocationMarker />
         </MapContainer>
@@ -78,4 +61,4 @@ export const LeafMap = memo(({ center, locations }) => {
       </div>
     </>
   );
-});
+}

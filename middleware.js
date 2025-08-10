@@ -54,12 +54,12 @@ export async function middleware(request) {
       return NextResponse.next();
     }
 
-    // Redirect to appropriate dashboard based on role (only for non-dashboard paths)
-    if (roles.includes("manager") && !pathname.startsWith("/manager")) {
-      return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
-    } else if (roles.includes("worker") && !pathname.startsWith("/worker")) {
-      return NextResponse.redirect(`${request.nextUrl.origin}/worker/dashboard`);
-    }
+    // // Redirect to appropriate dashboard based on role (only for non-dashboard paths)
+    // if (roles.includes("manager") && !pathname.startsWith("/manager")) {
+    //   return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
+    // } else if (roles.includes("worker") && !pathname.startsWith("/worker")) {
+    //   return NextResponse.redirect(`${request.nextUrl.origin}/worker/dashboard`);
+    // }
 
     // If no valid role, redirect to login
     if (!roles.includes("manager") && !roles.includes("worker")) {
