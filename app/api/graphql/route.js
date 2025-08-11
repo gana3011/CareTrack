@@ -55,7 +55,7 @@ export const resolvers = {
       let user = await prisma.user.findUnique({ 
         where: { userId } 
       });
-      console.log('in mutation '+picture);
+ 
       if (user) {
         // Update existing user
         user = await prisma.user.update({
