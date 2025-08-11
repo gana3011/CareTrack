@@ -43,7 +43,7 @@ export const LeafMap = () => {
     <>
       <div style={{ height: "80vh", borderRadius: "20px", overflow: "hidden" }}>
         <MapContainer
-          zoom={13}
+          zoom={15}
           minZoom={5}
           zoomControl={false}
           attributionControl={false}

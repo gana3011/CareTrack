@@ -24,4 +24,13 @@ model User{
   created_at DateTime  @default(now())
   updated_at DateTime @updatedAt
   last_login DateTime?
+  geofences Geofence[] @relation("ManagerGeofences")
+}
+
+model Geofence{
+  id Int @id @default
+  name String
+  managerId Int
+  manager User @relation("ManagerGeofences", fields:[managerId], references: [id])
+  
 }
