@@ -23,19 +23,48 @@ export async function middleware(request) {
     try {
       const session = await auth0.getSession();
       if (session) {
+        
         const token = session.tokenSet.accessToken;
+    
         const decoded = jwtDecode(token);
         const roles = decoded["https://healthcare.com/roles"] || [];
-        if (roles.includes("manager")) {
-          return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
-        } else if (roles.includes("worker")) {
-          return NextResponse.redirect(`${request.nextUrl.origin}/worker/dashboard`);
-        }
+        
+        // if (roles.includes("manager")) {
+        //   return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
+        // } else if (roles.includes("worker")) {
+        //   return NextResponse.redirect(`${request.nextUrl.origin}/worker/dashboard`);
+        // }
+        const response = NextResponse.redirect(
+          roles.includes("manager")
+            ? `${request.nextUrl.origin}/manager/dashboard`
+            : roles.includes("worker")
+              ? `${request.nextUrl.origin}/worker/dashboard`
+              : `${request.nextUrl.origin}/auth/login`
+        );
+
+        // Set userId cookie (stringified)
+        const userId = session.user.sub;
+        response.cookies.set("userId", JSON.stringify(userId), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 1 week
+        });
+
+        response.cookies.set("roles", JSON.stringify(roles), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 1 week
+        });
+
+        return response;
       }
     } catch (error) {
       console.error("Error checking session on home page:", error);
     }
-    console.log("Allowing unauthenticated access to home page");
     return authRes;
   }
 

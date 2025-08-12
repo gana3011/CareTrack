@@ -28,9 +28,12 @@ model User{
 }
 
 model Geofence{
-  id Int @id @default
+  id Int @id @default(autoincrement())
   name String
   managerId Int
+  center Unsupported("geography(Point,4326)")
+  radiusMeters Float @map("radius_meters")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
   manager User @relation("ManagerGeofences", fields:[managerId], references: [id])
-  
 }

@@ -4,6 +4,8 @@ import './globals.css';
 import 'leaflet/dist/leaflet.css';
 import React from 'react';
 import { Auth0Provider } from '@auth0/nextjs-auth0';
+import { ApolloProvider } from '@apollo/client';
+import client from '@/lib/apollo-client';
 
 export default function RootLayout({ children }) {
   return (
@@ -19,9 +21,11 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Auth0Provider>
+          <ApolloProvider client={client}>
           <main id="app" className="d-flex flex-column h-100">
             {children}
           </main>
+          </ApolloProvider>
         </Auth0Provider>
       </body>
     </html>

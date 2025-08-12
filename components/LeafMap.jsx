@@ -13,6 +13,8 @@ import "leaflet-defaulticon-compatibility";
 import { LocationMarker } from "./LocationMarker";
 import L from "leaflet";
 import IntegerStep from "./IntegerStep";
+import { useMutation } from "@apollo/client";
+import { ADD_GEOFENCE } from "@/lib/graphql-operations";
 
 // Component to handle map click
 const ClickHandler = ({ setUserPosition }) => {
@@ -24,12 +26,34 @@ const ClickHandler = ({ setUserPosition }) => {
   return null;
 };
 
+
 export const LeafMap = () => {
   const [userPosition, setUserPosition] = useState(null);
   const [targetPosition, setTargetPosition] = useState(null); 
   const [circleRadius, setCircleRadius] = useState(1);
   const [isInside, setIsInside] = useState(false);
   const roadmap = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}";
+  const [addGeofence, {data, loading, error}] = useMutation(ADD_GEOFENCE);
+
+  const handleSubmit = async (e) =>{
+  e.preventDefault();
+  try{
+    const response = await addGeofence({
+       variables: {
+    name: "eg",
+    center: {
+      lat: targetPosition.lat,
+      lng: targetPosition.lng,
+    },
+    radiusMeters: circleRadius * 1000,
+  }}
+    );
+    console.log(response.data);
+  }
+  catch(err){
+    console.error(err.message);
+  }
+}
 
   // Check if target is inside radius
   useEffect(() => {
@@ -70,6 +94,13 @@ export const LeafMap = () => {
           : "Click on the map to place a marker"}
       </div>
        <IntegerStep circleRadius={circleRadius} setCircleRadius={setCircleRadius} />
+       <form onSubmit={handleSubmit}>
+      <button type="submit" disabled={loading}>
+        {loading ? 'Adding': 'Add'}
+      </button>
+      {error && <p>Error: {error.message}</p>}
+      {data && <p>{data.addGeofence.success}</p>}
+    </form>
     </>
   );
 };
