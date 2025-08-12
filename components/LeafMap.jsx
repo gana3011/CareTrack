@@ -17,14 +17,14 @@ import { useMutation } from "@apollo/client";
 import { ADD_GEOFENCE } from "@/lib/graphql-operations";
 
 // Component to handle map click
-const ClickHandler = ({ setUserPosition }) => {
-  useMapEvents({
-    click(e) {
-      setUserPosition(e.latlng); // set marker position on click
-    },
-  });
-  return null;
-};
+// const ClickHandler = ({ setUserPosition }) => {
+//   useMapEvents({
+//     click(e) {
+//       setUserPosition(e.latlng); // set marker position on click
+//     },
+//   });
+//   return null;
+// };
 
 
 export const LeafMap = () => {
@@ -56,12 +56,12 @@ export const LeafMap = () => {
 }
 
   // Check if target is inside radius
-  useEffect(() => {
-    if (userPosition && targetPosition) {
-      const dist = L.latLng(targetPosition).distanceTo(L.latLng(userPosition));
-      setIsInside(dist <= radius);
-    }
-  }, [userPosition, targetPosition]);
+  // useEffect(() => {
+  //   if (userPosition && targetPosition) {
+  //     const dist = L.latLng(targetPosition).distanceTo(L.latLng(userPosition));
+  //     setIsInside(dist <= circleRadius*1000);
+  //   }
+  // }, [userPosition, targetPosition]);
 
   return (
     <>
@@ -79,20 +79,20 @@ export const LeafMap = () => {
           <LocationMarker circleRadius={circleRadius} setTargetPosition={setTargetPosition} />
 
           {/* Detect clicks and set target marker */}
-          <ClickHandler setUserPosition={setUserPosition} />
+          {/* <ClickHandler setUserPosition={setUserPosition} /> */}
 
           {/* Render target marker if set */}
-          {userPosition && <Marker position={userPosition} />}
+          {/* {userPosition && <Marker position={userPosition} />} */}
         </MapContainer>
       </div>
 
-      <div style={{ marginTop: "10px" }}>
+      {/* <div style={{ marginTop: "10px" }}>
         {userPosition
           ? isInside
             ? "Target is inside the circle"
             : "Target is outside the circle"
           : "Click on the map to place a marker"}
-      </div>
+      </div> */}
        <IntegerStep circleRadius={circleRadius} setCircleRadius={setCircleRadius} />
        <form onSubmit={handleSubmit}>
       <button type="submit" disabled={loading}>

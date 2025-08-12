@@ -12,7 +12,7 @@ export const LocationMarker = ({ circleRadius , setTargetPosition }) => {
     map.on("locationfound", (e) => {
       setPosition(e.latlng);
       setTargetPosition(e.latlng); // send to parent
-      map.setView(e.latlng, map.getZoom(), {animate: false});
+      // map.setView(e.latlng, map.getZoom(), {animate: false});
     });
 
     map.on("locationerror", (err) => {
@@ -25,11 +25,11 @@ export const LocationMarker = ({ circleRadius , setTargetPosition }) => {
     };
   }, [map, setTargetPosition]);
 
-useEffect(() => {
-    if (position) {
-      map.flyTo(position, 15);
-    }
-  }, [position, map]);
+// useEffect(() => {
+//     if (position) {
+//       map.flyTo(position, 15);
+//     }
+//   }, [position, map]);
 
   // Auto-adjust zoom based on circle radius
   useEffect(() => {
