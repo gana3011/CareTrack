@@ -35,11 +35,6 @@ const items = [
 ];
 
 const page = () => {
-  const {user, isLoading} = useUser();
-
-  useEffect(()=>{
-    console.log(user);
-  },[user]);
 
   const [collapsed, setCollapsed] = useState(false);
   const {
