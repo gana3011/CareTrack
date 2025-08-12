@@ -23,9 +23,18 @@ const typeDefs = gql`
     lat: Float!
     lng: Float!
   }
+  
+  type Shift{
+    id: ID!
+    workerId: Int
+    date: String
+    clock_in: String
+    clock_out: String
+  }
 
   type SuccessResponse {
     success: Boolean!
+    shift: Shift
   }
 
   type Query {
@@ -46,9 +55,32 @@ const typeDefs = gql`
     updateUser(id: ID!, name: String, email: String, roles: [String!]): User!
     deleteUser(id: ID!): Boolean!
     addGeofence(name: String!, center: PointInput!, radiusMeters: Float!): SuccessResponse
-    addLocation(userLocation: PointInput!): SuccessResponse
+    addShift(userLocation: PointInput!): SuccessResponse
   }
 `;
+
+async function checkIfInside(userLocation){
+  try{
+    const geofence = await prisma.$queryRaw`
+        SELECT EXISTS(
+        SELECT 1
+        FROM "Geofence"
+        WHERE ST_DWithin(
+          center,
+          ST_SetSRID(ST_MakePoint(${userLocation.lng}, ${userLocation.lat}), 4326)::geography,
+          radius_meters
+        )
+      ) AS "exists";
+        `
+        if(!geofence[0]?.exists){
+          return false;
+        }
+        else return true;
+  }catch(err){
+    console.error(err);
+    throw new Error(err.message);
+  }
+}
 
 
 export const resolvers = {
@@ -103,7 +135,6 @@ export const resolvers = {
             }
           });
         }
-
         return user;
       } catch (err) {
         throw new Error(err.message);
@@ -163,12 +194,13 @@ export const resolvers = {
       `;
         } else {
           geo = await prisma.$executeRaw`
-        INSERT INTO "Geofence" (name, "managerId", center, radius_meters)
+        INSERT INTO "Geofence" (name, "managerId", center, radius_meters,updated_at)
         VALUES (
           ${name},
           ${id},
           ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-          ${radiusMeters}
+          ${radiusMeters},
+          now()
         )
       `;
       console.log(geo);
@@ -181,27 +213,45 @@ export const resolvers = {
       }
     },
 
-    addLocation: async(_, {userLocation}) => {
-      console.log(userLocation);
+    addShift: async(_, {userLocation}) => {
       try{
-        const geofence = await prisma.$queryRaw`
-           SELECT EXISTS(
-        SELECT 1
-        FROM "Geofence"
-        WHERE ST_DWithin(
-          center,
-          ST_SetSRID(ST_MakePoint(${userLocation.lng}, ${userLocation.lat}), 4326)::geography,
-          radius_meters
-        )
-      ) AS "exists";
-        `
-        console.log(geofence);
-        if(geofence[0]?.exists){
-          return {success: true};
+      const cookieStore = await cookies();
+        let userId = cookieStore.get('userId')?.value || null;
+        userId = JSON.parse(userId);
+        const rolesString = cookieStore.get('roles')?.value || '[]';
+        let roles;
+        try {
+          roles = JSON.parse(rolesString);
+        } catch {
+          roles = [];
         }
-        else{
-          return {success: false}
+
+      if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
+      
+      console.log(userLocation);
+
+      const user = await prisma.user.findUnique({
+          where: { userId },
+          select: {
+            id: true
+          }
+        });
+
+      const id = user.id;
+
+      const isInside = await checkIfInside(userLocation);
+      if(!isInside){
+        return {success: false}
+      }
+      
+      let shift = await prisma.shift.create({
+        data:{
+          workerId: id,
+          date: new Date(),
+          clock_in: new Date(),
         }
+      })
+      return {success: true, shift}  
       }
       catch(err){
         console.error(err);

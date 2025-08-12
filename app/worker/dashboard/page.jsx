@@ -1,7 +1,7 @@
 'use client';
 
 import NavBar from '@/components/NavBar';
-import { ADD_LOCATION } from '@/lib/graphql-operations';
+import { ADD_SHIFT } from '@/lib/graphql-operations';
 import { useMutation } from '@apollo/client';
 import React, { useEffect, useState } from 'react'
 
@@ -9,7 +9,7 @@ const page = () => {
 
   const [userLocation, setUserLocation] = useState(null);
   const [locError, setLocError] = useState(null);
-  const [addLocation, {data, loading, error}] = useMutation(ADD_LOCATION);
+  const [addShift, {data, loading, error}] = useMutation(ADD_SHIFT);
 
  const handleSubmit = (e) => {
   e.preventDefault();
@@ -24,7 +24,7 @@ const page = () => {
       console.log('lat:',position.coords.latitude);
        console.log('lng:',position.coords.longitude);
       try {
-        const response = await addLocation({
+        const response = await addShift({
           variables: {
             userLocation: {
               lat: position.coords.latitude,
@@ -59,7 +59,7 @@ const page = () => {
     {locError && <div>{locError}</div>}
     {error && <p>Error: {error.message}</p>}
     {data && (
-    data.addLocation.success ? (
+    data.addShift.success ? (
     <div>Clocked in</div>
   ) : (
     <div>Outside Location. Cant clock in</div>
