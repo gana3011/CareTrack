@@ -98,6 +98,7 @@ export const LeafMap = () => {
       <button type="submit" disabled={loading}>
         {loading ? 'Adding': 'Add'}
       </button>
+      {targetPosition && <div>Lat:{targetPosition.lat} Long: {targetPosition.lng}</div>}
       {error && <p>Error: {error.message}</p>}
       {data && <p>{data.addGeofence.success}</p>}
     </form>
