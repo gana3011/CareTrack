@@ -1,46 +1,68 @@
 'use client';
 
 import NavBar from '@/components/NavBar';
+import { ADD_LOCATION } from '@/lib/graphql-operations';
+import { useMutation } from '@apollo/client';
 import React, { useEffect, useState } from 'react'
 
 const page = () => {
 
   const [userLocation, setUserLocation] = useState(null);
-  const [error, setError] = useState(null);
+  const [locError, setLocError] = useState(null);
+  const [addLocation, {data, loading, error}] = useMutation(ADD_LOCATION);
 
-  const handleSubmit =  (e) =>{
-    e.preventDefault();
-    if(!navigator.geolocation){
-      console.log("Geolocation not supported on browser");
-      return;
-    }
+ const handleSubmit = (e) => {
+  e.preventDefault();
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      },
-      (err)=>{
-        setError(err.message);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 100000,
-        maximumAge: 0,
-      }
-    )
+  if (!navigator.geolocation) {
+    console.log("Geolocation not supported on this browser");
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const response = await addLocation({
+          variables: {
+            userLocation: {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            },
+          },
+        });
+      } catch (err) {
+        console.error(err.message);
+      }
+    },
+    (err) => {
+      console.error("Location error:", err.message);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 100000,
+      maximumAge: 0,
+    }
+  );
+};
+
 
   return (
     <>
     <NavBar />
     <form onSubmit={handleSubmit}>
-      <button>Clock in</button>
+      <button disabled = {loading}>
+      {loading ?'Wait': 'Clock in'}
+      </button>
     </form>
-    {userLocation && <div> Lat: {userLocation.lat}, Lng: {userLocation.lng}</div>}
-    {error && <div>{error}</div>}
+    {locError && <div>{locError}</div>}
+    {error && <p>Error: {error.message}</p>}
+    {data && (
+    data.addLocation.success ? (
+    <div>Clocked in</div>
+  ) : (
+    <div>Outside Location. Cant clock in</div>
+  )
+)}
     </>
   )
 }
