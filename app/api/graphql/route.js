@@ -184,7 +184,7 @@ export const resolvers = {
     addLocation: async(_, {userLocation}) => {
       console.log(userLocation);
       try{
-        const geofence = prisma.$queryRaw`
+        const geofence = await prisma.$queryRaw`
            SELECT EXISTS(
         SELECT 1
         FROM "Geofence"
@@ -194,8 +194,8 @@ export const resolvers = {
           radius_meters
         )
       ) AS "exists";
-          );
         `
+        console.log(geofence);
         if(geofence[0]?.exists){
           return {success: true};
         }

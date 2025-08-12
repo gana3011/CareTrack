@@ -21,6 +21,8 @@ const page = () => {
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      console.log('lat:',position.coords.latitude);
+       console.log('lng:',position.coords.longitude);
       try {
         const response = await addLocation({
           variables: {
