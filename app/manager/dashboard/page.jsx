@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavBar from "@/components/NavBar";
 import axios from "axios";
 import {
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import LeafMapClient from "@/components/LeafMapClient";
+import { useUser } from "@auth0/nextjs-auth0";
 const { Header, Content, Footer, Sider } = Layout;
 function getItem(label, key, icon, children) {
   return {
@@ -34,6 +35,12 @@ const items = [
 ];
 
 const page = () => {
+  const {user, isLoading} = useUser();
+
+  useEffect(()=>{
+    console.log(user);
+  },[user]);
+
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },

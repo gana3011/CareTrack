@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "@prisma/client": "^6.13.0",
     "antd": "^5.26.7",
     "axios": "^1.11.0",
+    "cookie": "^1.0.2",
     "graphql": "^16.11.0",
     "graphql-tag": "^2.12.6",
     "highlight.js": "^11.9.0",
