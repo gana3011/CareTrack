@@ -19,7 +19,6 @@ export async function POST(req) {
       variables: { userId, name, email, picture, roles, created_at }
     });
     
-    const id = response.data.data.syncUser.id;
     
     if (response.data.errors) {
       console.error('GraphQL errors:', response.data.errors);
