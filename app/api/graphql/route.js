@@ -181,6 +181,7 @@ export const resolvers = {
     },
 
     addLocation: async(_, {userLocation}) => {
+      console.log(userLocation);
       try{
         const geofence = prisma.$queryRaw`
            SELECT EXISTS(
