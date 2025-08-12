@@ -149,7 +149,6 @@ export const resolvers = {
           }
         });
         const id = user.id;
-        console.log('id in graphql', id);
         let manager = await prisma.geofence.findFirst({
           where: { managerId: id }
         });
@@ -158,7 +157,8 @@ export const resolvers = {
           geo = await prisma.$executeRaw`
         UPDATE "Geofence"
         SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-        radius_meters = ${radiusMeters}
+        radius_meters = ${radiusMeters},
+        "updated_at" = NOW()
         WHERE "managerId" = ${id}
       `;
         } else {
@@ -171,6 +171,7 @@ export const resolvers = {
           ${radiusMeters}
         )
       `;
+      console.log(geo);
         }
 
         return { success: true };
