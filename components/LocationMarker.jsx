@@ -31,6 +31,21 @@ useEffect(() => {
     }
   }, [position, map]);
 
+  // Auto-adjust zoom based on circle radius
+  useEffect(() => {
+    if (position && circleRadius) {
+      let zoomLevel;
+      
+      if(circleRadius==1) zoomLevel = 15;
+      else if(circleRadius==2) zoomLevel = 14;
+      else if(circleRadius>=3 && circleRadius<=5) zoomLevel = 13;
+      else zoomLevel = 12;
+      
+      map.setView(position, zoomLevel, { animate: true }
+);
+    }
+  }, [circleRadius, position, map]);
+
   return position === null ? null : (
     <>
       <Marker position={position} />
