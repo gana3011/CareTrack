@@ -55,7 +55,8 @@ const typeDefs = gql`
     updateUser(id: ID!, name: String, email: String, roles: [String!]): User!
     deleteUser(id: ID!): Boolean!
     addGeofence(name: String!, center: PointInput!, radiusMeters: Float!): SuccessResponse
-    addShift(userLocation: PointInput!): SuccessResponse
+    clockIn(userLocation: PointInput!, date: String!): SuccessResponse
+    clockOut(userLocation: PointInput!, date: String!): SuccessResponse
   }
 `;
 
@@ -155,15 +156,8 @@ export const resolvers = {
     addGeofence: async (_, { name, center, radiusMeters }) => {
       try {
         const cookieStore = await cookies();
-        let userId = cookieStore.get('userId')?.value || null;
-        userId = JSON.parse(userId);
-        const rolesString = cookieStore.get('roles')?.value || '[]';
-        let roles;
-        try {
-          roles = JSON.parse(rolesString);
-        } catch {
-          roles = [];
-        }
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
         console.log('userId in graphql ', userId);
         console.log('roles in graphql ', roles);
@@ -213,18 +207,11 @@ export const resolvers = {
       }
     },
 
-    addShift: async(_, {userLocation}) => {
+    clockIn: async(_, {userLocation, date}) => {
       try{
       const cookieStore = await cookies();
-        let userId = cookieStore.get('userId')?.value || null;
-        userId = JSON.parse(userId);
-        const rolesString = cookieStore.get('roles')?.value || '[]';
-        let roles;
-        try {
-          roles = JSON.parse(rolesString);
-        } catch {
-          roles = [];
-        }
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
       if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
       
@@ -247,7 +234,7 @@ export const resolvers = {
       let shift = await prisma.shift.create({
         data:{
           workerId: id,
-          date: new Date(),
+          date: date,
           clock_in: new Date(),
         }
       })
@@ -257,7 +244,63 @@ export const resolvers = {
         console.error(err);
         throw new Error(err.message);
       }
-    }
+    },
+
+    clockOut: async(_, {userLocation, date}) => {
+      try{
+      const cookieStore = await cookies();
+        let userId = cookieStore.get('userId')?.value || null;
+        userId = JSON.parse(userId);
+        const rolesString = cookieStore.get('roles')?.value || '[]';
+        let roles;
+        try {
+          roles = JSON.parse(rolesString);
+        } catch {
+          roles = [];
+        }
+
+      if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
+      
+      console.log(userLocation);
+
+      const user = await prisma.user.findUnique({
+          where: { userId},
+          select: {
+            id: true
+          }
+        });
+
+      const id = user.id;
+
+      const isInside = await checkIfInside(userLocation);
+      if(!isInside){
+        return {success: false}
+      }
+
+      const openShift = await prisma.shift.findFirst({
+      where: {
+        workerId: id,
+        date:date,
+        clock_out: null
+      }
+    });
+
+    if(!openShift) throw new Error("Not clocked out");
+      
+      let shift = await prisma.shift.update({
+        where:{id: openShift.id},
+        data:{
+          clock_out: new Date()
+        }
+      });
+
+      return {success: true, shift}  
+      }
+      catch(err){
+        console.error(err);
+        throw new Error(err.message);
+      }
+    },
   }
 };
 

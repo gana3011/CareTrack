@@ -23,7 +23,12 @@ export const LocationMarker = ({ circleRadius , setTargetPosition }) => {
       map.off("locationfound");
       map.off("locationerror");
     };
+    
   }, [map, setTargetPosition]);
+ 
+  useEffect(()=>{
+    console.log(position);
+  },[position])
 
 // useEffect(() => {
 //     if (position) {

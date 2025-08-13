@@ -65,7 +65,7 @@ export const LeafMap = () => {
 
   return (
     <>
-      <div style={{ height: "80vh", borderRadius: "20px", overflow: "hidden" }}>
+      <div style={{ height: "60vh", borderRadius: "20px", overflow: "hidden"}}>
         <MapContainer
           zoom={15}
           minZoom={5}
@@ -85,23 +85,18 @@ export const LeafMap = () => {
           {/* {userPosition && <Marker position={userPosition} />} */}
         </MapContainer>
       </div>
-
-      {/* <div style={{ marginTop: "10px" }}>
-        {userPosition
-          ? isInside
-            ? "Target is inside the circle"
-            : "Target is outside the circle"
-          : "Click on the map to place a marker"}
-      </div> */}
+      <div>
        <IntegerStep circleRadius={circleRadius} setCircleRadius={setCircleRadius} />
        <form onSubmit={handleSubmit}>
       <button type="submit" disabled={loading}>
         {loading ? 'Adding': 'Add'}
       </button>
-      {targetPosition && <div>Lat:{targetPosition.lat} Long: {targetPosition.lng}</div>}
+      
+      {/* {targetPosition && <div>Lat:{targetPosition.lat} Long: {targetPosition.lng}</div>} */}
       {error && <p>Error: {error.message}</p>}
       {data && <p>{data.addGeofence.success}</p>}
     </form>
+    </div>
     </>
   );
 };
