@@ -3,15 +3,53 @@
 import React, { useEffect, useState } from 'react'
 import { Button, message, Table } from "antd";
 import dayjs from 'dayjs';
-import { useMutation } from '@apollo/client';
-import { CLOCK_IN, CLOCK_OUT } from '@/lib/graphql-operations';
+import { useMutation, useQuery } from '@apollo/client';
+import { CLOCK_IN, CLOCK_OUT, FETCH_USER_SHIFTS_BY_WEEK } from '@/lib/graphql-operations';
 
 
 const WorkerTable = ({getLocation, userLocation}) => {
   const [clockIn] = useMutation(CLOCK_IN);
   const [clockOut ] = useMutation(CLOCK_OUT)
   const [dataSource, setDataSource] = useState([]);
-  const today = dayjs().format("DD/MM/YY");
+  const today = dayjs().format("DD-MM-YY");
+  const formattedToday = dayjs().format("YYYY-MM-DD");
+  const {data, error, isLoading} = useQuery(FETCH_USER_SHIFTS_BY_WEEK,{
+    variables: { date: formattedToday},
+    skip: !formattedToday
+  });
+
+  const generateWeekData = () => {
+    const startOfWeek = dayjs().startOf('week').add(1,'days'); 
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = startOfWeek.add(i, 'day');
+      return {
+        key: date.format('DD-MM-YY'),
+        date: date.format('DD-MM-YY'),
+        clock_in: '',
+        clock_out: '',
+      };
+    });
+  };
+
+  const fetchWeekData = () => {
+    const weekDates = generateWeekData();
+    const mergedData = weekDates.map((weekDate) => {
+  const existing = data.fetchUserShiftsByWeek.find((d) => d.date === weekDate.date);
+  return {
+    key: weekDate.date,
+    date: weekDate.date,
+    clock_in: existing?.clock_in || '',
+    clock_out: existing?.clock_out || ''
+  };
+});
+
+    setDataSource(mergedData);
+  }
+  useEffect(()=>{
+  if(!isLoading && data){
+    fetchWeekData();
+  }
+},[data,isLoading])
   
   const handleClockIn = async(record)=>{
     const location = await getLocation();
@@ -63,22 +101,10 @@ const WorkerTable = ({getLocation, userLocation}) => {
       }
   }
 
-  const generateWeekData = () => {
-    const startOfWeek = dayjs().startOf('week'); 
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = startOfWeek.add(i, 'day');
-      return {
-        key: date.format('DD/MM/YY'),
-        date: date.format('DD/MM/YY'),
-        clock_in: '',
-        clock_out: '',
-      };
-    });
-  };
 
-  useEffect(()=>{
-    setDataSource(generateWeekData());
-  },[]);
+  // useEffect(()=>{
+  //   setDataSource(generateWeekData());
+  // },[]);
 
   const columns = [
     {title: 'Date', dataIndex: 'date', key: 'date'},
