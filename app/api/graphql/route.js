@@ -3,6 +3,10 @@ import { startServerAndCreateNextHandler } from '@as-integrations/next';
 import { PrismaClient } from '../../../lib/generated/prisma';
 import { gql } from 'graphql-tag';
 import { cookies } from 'next/headers';
+import dayjs from 'dayjs';
+import weekday from "dayjs/plugin/weekday";
+
+dayjs.extend(weekday);
 
 const prisma = new PrismaClient();
 
@@ -41,6 +45,7 @@ const typeDefs = gql`
     users: [User!]!
     user(id: ID!): User
     userByUserId(userId: String!): User
+    fetchUserShiftsByWeek(date: String!): [Shift]!
   }
 
   type Mutation {
@@ -98,7 +103,32 @@ export const resolvers = {
       return await prisma.user.findUnique({
         where: { userId }
       });
+    },
+
+    fetchUserShiftsByWeek: async(_, {date}) => {
+        const cookieStore = await cookies();
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+        const id = userId.id;
+        const startOfWeek = dayjs(date).weekday(1).startOf('day');
+        const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+        const shifts = await prisma.shift.findMany({
+          where: {userId: id,
+            date:{
+              gte:startOfWeek.toISOString(),
+              lte: endOfWeek.toISOString()
+            }
+          }
+        })
+
+        //formatting
+        return shifts.map(s => ({
+        ...s,
+        date: s.date ? dayjs(s.date).format("DD-MM-YY") : null,
+        clock_in: s.clock_in ? dayjs(s.clock_in).format("HH:mm:ss") : null,
+        clock_out: s.clock_out ? dayjs(s.clock_out).format("HH:mm:ss") : null
+      }));
     }
+
   },
 
   Mutation: {
@@ -248,16 +278,9 @@ export const resolvers = {
 
     clockOut: async(_, {userLocation, date}) => {
       try{
-      const cookieStore = await cookies();
-        let userId = cookieStore.get('userId')?.value || null;
-        userId = JSON.parse(userId);
-        const rolesString = cookieStore.get('roles')?.value || '[]';
-        let roles;
-        try {
-          roles = JSON.parse(rolesString);
-        } catch {
-          roles = [];
-        }
+       const cookieStore = await cookies();
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
       if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
       
@@ -293,7 +316,6 @@ export const resolvers = {
           clock_out: new Date()
         }
       });
-
       return {success: true, shift}  
       }
       catch(err){
@@ -301,6 +323,8 @@ export const resolvers = {
         throw new Error(err.message);
       }
     },
+
+    
   }
 };
 
