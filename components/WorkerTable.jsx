@@ -8,12 +8,12 @@ import { CLOCK_IN, CLOCK_OUT, FETCH_USER_SHIFTS_BY_WEEK } from '@/lib/graphql-op
 
 
 const WorkerTable = ({getLocation, userLocation}) => {
-  const [clockIn, {clockInData, clockInError, clockInLoading}] = useMutation(CLOCK_IN);
-  const [clockOut, {clockOutData, clockOutError, clockOutLoading} ] = useMutation(CLOCK_OUT)
+  const [clockIn, {data: clockInData, error: clockInError, loading: clockInLoading}] = useMutation(CLOCK_IN);
+  const [clockOut, {data: clockOutData, error: clockOutError, loading: clockOutLoading} ] = useMutation(CLOCK_OUT)
   const [dataSource, setDataSource] = useState([]);
   const today = dayjs().format("DD-MM-YY");
   const formattedToday = dayjs().format("YYYY-MM-DD");
-  const {data, error, isLoading} = useQuery(FETCH_USER_SHIFTS_BY_WEEK,{
+  const {data, error, loading} = useQuery(FETCH_USER_SHIFTS_BY_WEEK,{
     variables: { date: formattedToday},
     skip: !formattedToday
   });
@@ -46,10 +46,11 @@ const WorkerTable = ({getLocation, userLocation}) => {
     setDataSource(mergedData);
   }
   useEffect(()=>{
-  if(!isLoading && data){
+  if(!loading && data){
     fetchWeekData();
   }
-},[data,isLoading])
+},[data,loading])
+
   
   const handleClockIn = async(record)=>{
     const location = await getLocation();

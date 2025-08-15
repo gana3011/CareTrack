@@ -12,7 +12,9 @@ import {
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import LeafMapClient from "@/components/LeafMapClient";
 import { useUser } from "@auth0/nextjs-auth0";
+import ManagerTable from "@/components/ManagerTable";
 const { Header, Content, Footer, Sider } = Layout;
+
 function getItem(label, key, icon, children) {
   return {
     key,
@@ -23,7 +25,7 @@ function getItem(label, key, icon, children) {
 }
 
 const items = [
-  getItem('Option 1', '1', <PieChartOutlined />),
+  getItem('Location', '1', <PieChartOutlined />),
   getItem('Option 2', '2', <DesktopOutlined />),
   getItem('User', 'sub1', <UserOutlined />, [
     getItem('Tom', '3'),
@@ -53,6 +55,7 @@ const page = () => {
 
       <Layout>
         <Content style={{ margin: '0 16px' }}>
+          <ManagerTable />
           <LeafMapClient />
         </Content>
         </Layout>

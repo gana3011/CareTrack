@@ -5,6 +5,8 @@ import { gql } from 'graphql-tag';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import weekday from "dayjs/plugin/weekday";
+import { userAgent } from 'next/server';
+
 
 dayjs.extend(weekday);
 
@@ -34,6 +36,7 @@ const typeDefs = gql`
     date: String
     clock_in: String
     clock_out: String
+    user: User
   }
 
   type SuccessResponse {
@@ -46,6 +49,7 @@ const typeDefs = gql`
     user(id: ID!): User
     userByUserId(userId: String!): User
     fetchUserShiftsByWeek(date: String!): [Shift]!
+    fetchActiveShifts(date: String!): [Shift]!
   }
 
   type Mutation {
@@ -106,20 +110,26 @@ export const resolvers = {
     },
 
     fetchUserShiftsByWeek: async(_, {date}) => {
-        const cookieStore = await cookies();
+      try{
+const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
-        const id = userId.id;
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: {
+            id: true
+          }
+        });
+        const id = user.id;
         const startOfWeek = dayjs(date).weekday(1).startOf('day');
         const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
         const shifts = await prisma.shift.findMany({
-          where: {userId: id,
+          where: {workerId: id,
             date:{
               gte:startOfWeek.toISOString(),
               lte: endOfWeek.toISOString()
             }
           }
         })
-
         //formatting
         return shifts.map(s => ({
         ...s,
@@ -127,7 +137,56 @@ export const resolvers = {
         clock_in: s.clock_in ? dayjs(s.clock_in).format("HH:mm:ss") : null,
         clock_out: s.clock_out ? dayjs(s.clock_out).format("HH:mm:ss") : null
       }));
-    }
+      } catch(err){
+        throw new Error(err.message);
+      }
+        
+    },
+
+     fetchActiveShifts: async(_, {date}) => {
+      try{
+const cookieStore = await cookies();
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
+
+    if (!roles.includes('manager')) {
+          throw new Error('Not authorized to add geofence');
+        }
+        
+
+    const shifts = await prisma.shift.findMany({
+      where:{
+        date: new Date(date)
+      },
+      select:{
+        id: true,
+        clock_in: true,
+        clock_out: true,
+        worker:{
+          select:{
+            name: true,
+            id: true
+          }
+        }
+      }
+    })
+
+    console.log(shifts);
+
+    return shifts.map(s => ({
+        ...s,
+        id: s.id,
+        clock_in: s.clock_in ? dayjs(s.clock_in).format("HH:mm:ss") : null,
+        clock_out: s.clock_out ? dayjs(s.clock_out).format("HH:mm:ss") : null,
+        user: s.worker
+      }));
+      }
+
+      catch(err){
+        throw new Error(err.message);
+      }
+        
+  }
 
   },
 
