@@ -71,9 +71,9 @@ const page = () => {
       </Layout>
       
     </Layout>
-    <Footer style={{ textAlign: 'center' , zIndex : 1  }}>
+    {/* <Footer style={{ textAlign: 'center' , zIndex : 1  }}>
           Ant Design ©{new Date().getFullYear()} Created by Ant UED
-        </Footer>
+        </Footer> */}
     </>
   )
 }

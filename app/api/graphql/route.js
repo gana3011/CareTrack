@@ -229,7 +229,6 @@ export const resolvers = {
       GROUP BY "date"
       ORDER BY "date";
       `;
-      console.log(noOfPeople);
       return noOfPeople.map(no=>({
         ...no,
         date: dayjs(no.date).format('DD-MM-YYYY'),
