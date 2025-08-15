@@ -39,7 +39,7 @@ export const LeafMap = () => {
   try{
     await addGeofence({
        variables: {
-    name,
+    name: name.trim(),
     center: {
       lat: targetPosition.lat,
       lng: targetPosition.lng,

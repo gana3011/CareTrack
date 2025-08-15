@@ -82,8 +82,8 @@ type StaffTotalHours {
     updateUser(id: ID!, name: String, email: String, roles: [String!]): User!
     deleteUser(id: ID!): Boolean!
     addGeofence(name: String!, center: PointInput!, radiusMeters: Float!): SuccessResponse
-    clockIn(userLocation: PointInput!, date: String!): SuccessResponse
-    clockOut(userLocation: PointInput!, date: String!): SuccessResponse
+    clockIn(userLocation: PointInput!, date: String!, clock_in_note: String): SuccessResponse
+    clockOut(userLocation: PointInput!, date: String!, clock_out_note: String): SuccessResponse
   }
 `;
 
@@ -377,7 +377,7 @@ export const resolvers = {
       }
     },
 
-    clockIn: async (_, { userLocation, date }) => {
+    clockIn: async (_, { userLocation, date, clock_in_note }) => {
       try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
@@ -403,7 +403,8 @@ export const resolvers = {
           data: {
             workerId: id,
             date: date,
-            clock_in: new Date()
+            clock_in: new Date(),
+            clock_in_note
           }
         });
         return { success: true, shift };
@@ -413,7 +414,7 @@ export const resolvers = {
       }
     },
 
-    clockOut: async (_, { userLocation, date }) => {
+    clockOut: async (_, { userLocation, date, clock_out_note}) => {
       try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
@@ -439,7 +440,7 @@ export const resolvers = {
           where: {
             workerId: id,
             date: date,
-            clock_out: null
+            clock_out: null,
           }
         });
 
@@ -448,7 +449,8 @@ export const resolvers = {
         let shift = await prisma.shift.update({
           where: { id: openShift.id },
           data: {
-            clock_out: new Date()
+            clock_out: new Date(),
+            clock_out_note
           }
         });
         return { success: true, shift };
