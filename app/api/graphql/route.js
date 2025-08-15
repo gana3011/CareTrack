@@ -4,7 +4,8 @@ import { PrismaClient } from '../../../lib/generated/prisma';
 import { gql } from 'graphql-tag';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
-import weekday from "dayjs/plugin/weekday";
+import weekday from 'dayjs/plugin/weekday';
+import { message } from 'antd';
 
 dayjs.extend(weekday);
 
@@ -27,25 +28,46 @@ const typeDefs = gql`
     lat: Float!
     lng: Float!
   }
-  
-  type Shift{
+
+  type Shift {
     id: ID!
     workerId: Int
     date: String
     clock_in: String
     clock_out: String
+    user: User
   }
 
   type SuccessResponse {
     success: Boolean!
+    message: String
     shift: Shift
   }
+  
+  type DailyAverageHours {
+  date: String
+  avg_hours: Float
+}
+
+type DailyPeopleCount {
+  date: String
+  people_count: Int
+}
+
+type StaffTotalHours {
+  name: String
+  total_hours: Float
+}
 
   type Query {
     users: [User!]!
     user(id: ID!): User
     userByUserId(userId: String!): User
     fetchUserShiftsByWeek(date: String!): [Shift]!
+    fetchActiveShifts(date: String!): [Shift]!
+    totalHoursPerStaff(date: String!): [StaffTotalHours]!
+    peopleClockingInPerDay(date: String!): [DailyPeopleCount]!
+    avgHoursPerDay(date: String!): [DailyAverageHours]!
   }
 
   type Mutation {
@@ -60,13 +82,13 @@ const typeDefs = gql`
     updateUser(id: ID!, name: String, email: String, roles: [String!]): User!
     deleteUser(id: ID!): Boolean!
     addGeofence(name: String!, center: PointInput!, radiusMeters: Float!): SuccessResponse
-    clockIn(userLocation: PointInput!, date: String!): SuccessResponse
-    clockOut(userLocation: PointInput!, date: String!): SuccessResponse
+    clockIn(userLocation: PointInput!, date: String!, clock_in_note: String): SuccessResponse
+    clockOut(userLocation: PointInput!, date: String!, clock_out_note: String): SuccessResponse
   }
 `;
 
-async function checkIfInside(userLocation){
-  try{
+async function checkIfInside(userLocation) {
+  try {
     const geofence = await prisma.$queryRaw`
         SELECT EXISTS(
         SELECT 1
@@ -77,17 +99,15 @@ async function checkIfInside(userLocation){
           radius_meters
         )
       ) AS "exists";
-        `
-        if(!geofence[0]?.exists){
-          return false;
-        }
-        else return true;
-  }catch(err){
+        `;
+    if (!geofence[0]?.exists) {
+      return false;
+    } else return true;
+  } catch (err) {
     console.error(err);
     throw new Error(err.message);
   }
 }
-
 
 export const resolvers = {
   Query: {
@@ -105,30 +125,136 @@ export const resolvers = {
       });
     },
 
-    fetchUserShiftsByWeek: async(_, {date}) => {
+    fetchUserShiftsByWeek: async (_, { date }) => {
+      try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
-        const id = userId.id;
+        const user = await prisma.user.findUnique({
+          where: { userId },
+          select: {
+            id: true
+          }
+        });
+        const id = user.id;
         const startOfWeek = dayjs(date).weekday(1).startOf('day');
         const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
         const shifts = await prisma.shift.findMany({
-          where: {userId: id,
-            date:{
-              gte:startOfWeek.toISOString(),
+          where: {
+            workerId: id,
+            date: {
+              gte: startOfWeek.toISOString(),
               lte: endOfWeek.toISOString()
             }
           }
-        })
-
+        });
         //formatting
         return shifts.map(s => ({
-        ...s,
-        date: s.date ? dayjs(s.date).format("DD-MM-YY") : null,
-        clock_in: s.clock_in ? dayjs(s.clock_in).format("HH:mm:ss") : null,
-        clock_out: s.clock_out ? dayjs(s.clock_out).format("HH:mm:ss") : null
-      }));
-    }
+          ...s,
+          date: s.date ? dayjs(s.date).format('DD-MM-YY') : null,
+          clock_in: s.clock_in ? dayjs(s.clock_in).format('HH:mm:ss') : null,
+          clock_out: s.clock_out ? dayjs(s.clock_out).format('HH:mm:ss') : null
+        }));
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    },
 
+    fetchActiveShifts: async (_, { date }) => {
+      try {
+        const cookieStore = await cookies();
+        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+        const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
+
+        if (!roles.includes('manager')) {
+          throw new Error('Not authorized to add geofence');
+        }
+
+        const shifts = await prisma.shift.findMany({
+          where: {
+            date: new Date(date)
+          },
+          select: {
+            id: true,
+            clock_in: true,
+            clock_out: true,
+            worker: {
+              select: {
+                name: true,
+                id: true
+              }
+            }
+          }
+        });
+
+        return shifts.map(s => ({
+          ...s,
+          id: s.id,
+          clock_in: s.clock_in ? dayjs(s.clock_in).format('HH:mm:ss') : null,
+          clock_out: s.clock_out ? dayjs(s.clock_out).format('HH:mm:ss') : null,
+          user: s.worker
+        }));
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    },
+
+    avgHoursPerDay: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+      const avgHoursPerDay = await prisma.$queryRaw`
+      SELECT "date",
+      AVG(EXTRACT(EPOCH FROM ("clock_out"-"clock_in"))/3600) as avg_hours
+      FROM "Shift"
+      WHERE "clock_out" IS NOT NULL and 
+      ("date">=${startOfWeek.toDate()} AND "date"<=${endOfWeek.toDate()})
+      GROUP BY "date"
+      ORDER BY "date"
+      `;
+      return avgHoursPerDay.map(avg=>({
+        ...avg,
+        date: dayjs(avg.date).format('DD-MM-YY'),
+        avg_hours: avg.avg_hours
+      }));
+    },
+
+    peopleClockingInPerDay: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+
+      const noOfPeople = await prisma.$queryRaw`
+      SELECT "date",
+      COUNT(DISTINCT "workerId") AS people_count
+      FROM "Shift"
+      WHERE "clock_in" IS NOT NULL
+      AND "date" >= ${startOfWeek.toDate()}
+      AND "date" <= ${endOfWeek.toDate()}
+      GROUP BY "date"
+      ORDER BY "date";
+      `;
+      return noOfPeople.map(no=>({
+        ...no,
+        date: dayjs(no.date).format('DD-MM-YYYY'),
+        people_count: Number(no.people_count)
+      }));
+    },
+
+    totalHoursPerStaff: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+
+      const totalHours = await prisma.$queryRaw`
+      SELECT u."name",
+      SUM(EXTRACT(EPOCH FROM (s."clock_out" - s."clock_in")) / 3600) AS total_hours
+      FROM "Shift" AS s JOIN "User" AS u 
+      ON s."workerId" = u.id
+      WHERE s."clock_out" IS NOT NULL
+      AND s."date" >= ${startOfWeek.toDate()}
+      AND s."date" <= ${endOfWeek.toDate()}
+      GROUP BY u."name"
+      ORDER BY total_hours DESC;
+  `;
+      return totalHours;
+    }
   },
 
   Mutation: {
@@ -187,10 +313,7 @@ export const resolvers = {
       try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
-    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
-
-        console.log('userId in graphql ', userId);
-        console.log('roles in graphql ', roles);
+        const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
         if (!roles.includes('manager')) {
           throw new Error('Not authorized to add geofence');
@@ -204,20 +327,37 @@ export const resolvers = {
           }
         });
         const id = user.id;
-        let manager = await prisma.geofence.findFirst({
-          where: { managerId: id }
-        });
+        let existing = await prisma.geofence.findUnique({
+          where:{
+            name_managerId: {
+              name,
+              managerId: id
 
-        if (manager) {
-          geo = await prisma.$executeRaw`
-        UPDATE "Geofence"
-        SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-        radius_meters = ${radiusMeters},
-        "updated_at" = NOW()
-        WHERE "managerId" = ${id}
-      `;
-        } else {
-          geo = await prisma.$executeRaw`
+            }
+          }
+        })
+
+        if(existing){
+          return {
+            success: false,
+            message: "A Location with the same name is already managed by you. Give a different name"
+          }
+        }
+
+      //   let manager = await prisma.geofence.findFirst({
+      //     where: { managerId: id }
+      //   });
+
+      //   if (manager) {
+      //     geo = await prisma.$executeRaw`
+      //   UPDATE "Geofence"
+      //   SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
+      //   radius_meters = ${radiusMeters},
+      //   "updated_at" = NOW()
+      //   WHERE "managerId" = ${id}
+      // `;
+      //   } else {
+        geo = await prisma.$executeRaw`
         INSERT INTO "Geofence" (name, "managerId", center, radius_meters,updated_at)
         VALUES (
           ${name},
@@ -227,104 +367,98 @@ export const resolvers = {
           now()
         )
       `;
-      console.log(geo);
-        }
 
-        return { success: true };
+        return { success: true,
+          message: 'Location added successfully'
+        };
       } catch (err) {
         console.error(err);
         throw new Error(err.message);
       }
     },
 
-    clockIn: async(_, {userLocation, date}) => {
-      try{
-      const cookieStore = await cookies();
+    clockIn: async (_, { userLocation, date, clock_in_note }) => {
+      try {
+        const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
-    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
+        const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
-      if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
-      
-      console.log(userLocation);
+        if (!roles.includes('worker')) throw new Error('Not authorized to clock in');
 
-      const user = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: { userId },
           select: {
             id: true
           }
         });
 
-      const id = user.id;
+        const id = user.id;
 
-      const isInside = await checkIfInside(userLocation);
-      if(!isInside){
-        return {success: false}
-      }
-      
-      let shift = await prisma.shift.create({
-        data:{
-          workerId: id,
-          date: date,
-          clock_in: new Date(),
+        const isInside = await checkIfInside(userLocation);
+        if (!isInside) {
+          return { success: false };
         }
-      })
-      return {success: true, shift}  
-      }
-      catch(err){
+
+        let shift = await prisma.shift.create({
+          data: {
+            workerId: id,
+            date: date,
+            clock_in: new Date(),
+            clock_in_note
+          }
+        });
+        return { success: true, shift };
+      } catch (err) {
         console.error(err);
         throw new Error(err.message);
       }
     },
 
-    clockOut: async(_, {userLocation, date}) => {
-      try{
-       const cookieStore = await cookies();
+    clockOut: async (_, { userLocation, date, clock_out_note}) => {
+      try {
+        const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
-    const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
+        const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
-      if(!roles.includes("worker")) throw new Error('Not authorized to clock in');
-      
-      console.log(userLocation);
+        if (!roles.includes('worker')) throw new Error('Not authorized to clock in');
 
-      const user = await prisma.user.findUnique({
-          where: { userId},
+        const user = await prisma.user.findUnique({
+          where: { userId },
           select: {
             id: true
           }
         });
 
-      const id = user.id;
+        const id = user.id;
 
-      const isInside = await checkIfInside(userLocation);
-      if(!isInside){
-        return {success: false}
-      }
-
-      const openShift = await prisma.shift.findFirst({
-      where: {
-        workerId: id,
-        date:date,
-        clock_out: null
-      }
-    });
-
-    if(!openShift) throw new Error("Not clocked out");
-      
-      let shift = await prisma.shift.update({
-        where:{id: openShift.id},
-        data:{
-          clock_out: new Date()
+        const isInside = await checkIfInside(userLocation);
+        if (!isInside) {
+          return { success: false };
         }
-      });
-      return {success: true, shift}  
-      }
-      catch(err){
+
+        const openShift = await prisma.shift.findFirst({
+          where: {
+            workerId: id,
+            date: date,
+            clock_out: null,
+          }
+        });
+
+        if (!openShift) throw new Error('Not clocked out');
+
+        let shift = await prisma.shift.update({
+          where: { id: openShift.id },
+          data: {
+            clock_out: new Date(),
+            clock_out_note
+          }
+        });
+        return { success: true, shift };
+      } catch (err) {
         console.error(err);
         throw new Error(err.message);
       }
-    },
-
-    
+    }
   }
 };
 

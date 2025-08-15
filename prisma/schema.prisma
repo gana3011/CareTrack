@@ -4,9 +4,6 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-//1.create a shadow table
-//2.migrate schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -34,21 +31,24 @@ model User{
 
 model Geofence{
   id Int @id @default(autoincrement())
-  name String
+  name String 
   managerId Int
   center Unsupported("geography(Point,4326)")
   radiusMeters Float @map("radius_meters")
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
   manager User @relation("ManagerGeofences", fields:[managerId], references: [id])
+  @@unique([name, managerId])
 }
 
 model Shift{
   id Int @id @default(autoincrement())
   workerId Int
   date DateTime @db.Date
-  clock_in DateTime @db.Time
-  clock_out DateTime? @db.Time
+  clock_in DateTime 
+  clock_out DateTime? 
+  clock_in_note String?
+  clock_out_note String?
   worker User @relation("WorkerShift", fields: [workerId], references: [id])
   @@index([workerId]) 
 }

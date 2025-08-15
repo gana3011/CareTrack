@@ -25,10 +25,8 @@ export async function middleware(request) {
       if (session) {
         
         const token = session.tokenSet.accessToken;
-    
         const decoded = jwtDecode(token);
         const roles = decoded["https://healthcare.com/roles"] || [];
-        
         // if (roles.includes("manager")) {
         //   return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
         // } else if (roles.includes("worker")) {

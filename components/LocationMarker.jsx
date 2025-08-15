@@ -26,10 +26,6 @@ export const LocationMarker = ({ circleRadius , setTargetPosition }) => {
     
   }, [map, setTargetPosition]);
  
-  useEffect(()=>{
-    console.log(position);
-  },[position])
-
 // useEffect(() => {
 //     if (position) {
 //       map.flyTo(position, 15);
