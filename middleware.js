@@ -36,7 +36,7 @@ export async function middleware(request) {
         // }
         const response = NextResponse.redirect(
           roles.includes("manager")
-            ? `${request.nextUrl.origin}/manager/dashboard`
+            ? `${request.nextUrl.origin}/manager`
             : roles.includes("worker")
               ? `${request.nextUrl.origin}/worker/dashboard`
               : `${request.nextUrl.origin}/auth/login`
