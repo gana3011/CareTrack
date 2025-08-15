@@ -25,8 +25,8 @@ function getItem(label, key, icon, children) {
 }
 
 const items = [
-  getItem('Location', '1', <PieChartOutlined />),
-  getItem('Option 2', '2', <DesktopOutlined />),
+  getItem('Perimeter', '1', <PieChartOutlined />),
+  getItem('User', '2', <UserOutlined />),
   getItem('User', 'sub1', <UserOutlined />, [
     getItem('Tom', '3'),
     getItem('Bill', '4'),
@@ -39,24 +39,35 @@ const items = [
 const page = () => {
 
   const [collapsed, setCollapsed] = useState(false);
+  const [activeKey, setActiveKey] = useState("1");
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  const renderComponent = () =>{
+    switch(activeKey){
+      case "1":
+        return <LeafMapClient />
+      case "2":
+        return <ManagerTable />
+      default:
+        return <LeafMapClient />
+    }
+  }
+
   return (
     <>
-
      <Layout> 
         <NavBar />
       <Layout>
       <Sider  >
         {/* <div className="demo-logo-vertical" /> */}
-        <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} />
+        <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline" items={items} onClick={(e)=>setActiveKey(e.key)}/>
       </Sider>
 
       <Layout>
         <Content style={{ margin: '0 16px' }}>
-          <ManagerTable />
-          <LeafMapClient />
+          {renderComponent()}
         </Content>
         </Layout>
       </Layout>
