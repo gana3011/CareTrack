@@ -6,6 +6,7 @@ import {
   DesktopOutlined,
   FileOutlined,
   PieChartOutlined,
+  PushpinOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -13,6 +14,7 @@ import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import LeafMapClient from "@/components/LeafMapClient";
 import { useUser } from "@auth0/nextjs-auth0";
 import ManagerTable from "@/components/ManagerTable";
+import DashBoard from "@/components/DashBoard";
 const { Header, Content, Footer, Sider } = Layout;
 
 function getItem(label, key, icon, children) {
@@ -25,15 +27,9 @@ function getItem(label, key, icon, children) {
 }
 
 const items = [
-  getItem('Perimeter', '1', <PieChartOutlined />),
-  getItem('User', '2', <UserOutlined />),
-  getItem('User', 'sub1', <UserOutlined />, [
-    getItem('Tom', '3'),
-    getItem('Bill', '4'),
-    getItem('Alex', '5'),
-  ]),
-  getItem('Team', 'sub2', <TeamOutlined />, [getItem('Team 1', '6'), getItem('Team 2', '8')]),
-  getItem('Files', '9', <FileOutlined />),
+  getItem('Perimeter', '1', <PushpinOutlined />),
+  getItem('Users', '2', <UserOutlined />),
+  getItem('Dashboard', '3', <PieChartOutlined />)
 ];
 
 const page = () => {
@@ -50,6 +46,8 @@ const page = () => {
         return <LeafMapClient />
       case "2":
         return <ManagerTable />
+      case "3":
+        return <DashBoard />
       default:
         return <LeafMapClient />
     }

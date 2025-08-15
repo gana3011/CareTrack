@@ -6,7 +6,6 @@ import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import weekday from 'dayjs/plugin/weekday';
 
-
 dayjs.extend(weekday);
 
 const prisma = new PrismaClient();
@@ -42,6 +41,21 @@ const typeDefs = gql`
     success: Boolean!
     shift: Shift
   }
+  
+  type DailyAverageHours {
+  date: String
+  avg_hours: Float
+}
+
+type DailyPeopleCount {
+  date: String
+  people_count: Int
+}
+
+type StaffTotalHours {
+  name: String
+  total_hours: Float
+}
 
   type Query {
     users: [User!]!
@@ -49,6 +63,9 @@ const typeDefs = gql`
     userByUserId(userId: String!): User
     fetchUserShiftsByWeek(date: String!): [Shift]!
     fetchActiveShifts(date: String!): [Shift]!
+    totalHoursPerStaff(date: String!): [StaffTotalHours]!
+    peopleClockingInPerDay(date: String!): [DailyPeopleCount]!
+    avgHoursPerDay(date: String!): [DailyAverageHours]!
   }
 
   type Mutation {
@@ -177,6 +194,65 @@ export const resolvers = {
       } catch (err) {
         throw new Error(err.message);
       }
+    },
+
+    avgHoursPerDay: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+      const avgHoursPerDay = await prisma.$queryRaw`
+      SELECT "date",
+      AVG(EXTRACT(EPOCH FROM ("clock_out"-"clock_in"))/3600) as avg_hours
+      FROM "Shift"
+      WHERE "clock_out" IS NOT NULL and 
+      ("date">=${startOfWeek.toDate()} AND "date"<=${endOfWeek.toDate()})
+      GROUP BY "date"
+      ORDER BY "date"
+      `;
+      return avgHoursPerDay.map(avg=>({
+        ...avg,
+        date: dayjs(avg.date).format('DD-MM-YY'),
+        avg_hours: avg.avg_hours
+      }));
+    },
+
+    peopleClockingInPerDay: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+
+      const noOfPeople = await prisma.$queryRaw`
+      SELECT "date",
+      COUNT(DISTINCT "workerId") AS people_count
+      FROM "Shift"
+      WHERE "clock_in" IS NOT NULL
+      AND "date" >= ${startOfWeek.toDate()}
+      AND "date" <= ${endOfWeek.toDate()}
+      GROUP BY "date"
+      ORDER BY "date";
+      `;
+      console.log(noOfPeople);
+      return noOfPeople.map(no=>({
+        ...no,
+        date: dayjs(no.date).format('DD-MM-YYYY'),
+        people_count: Number(no.people_count)
+      }));
+    },
+
+    totalHoursPerStaff: async (_, { date }) => {
+      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
+
+      const totalHours = await prisma.$queryRaw`
+      SELECT u."name",
+      SUM(EXTRACT(EPOCH FROM (s."clock_out" - s."clock_in")) / 3600) AS total_hours
+      FROM "Shift" AS s JOIN "User" AS u 
+      ON s."workerId" = u.id
+      WHERE s."clock_out" IS NOT NULL
+      AND s."date" >= ${startOfWeek.toDate()}
+      AND s."date" <= ${endOfWeek.toDate()}
+      GROUP BY u."name"
+      ORDER BY total_hours DESC;
+  `;
+      return totalHours;
     }
   },
 

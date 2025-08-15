@@ -47,8 +47,8 @@ model Shift{
   id Int @id @default(autoincrement())
   workerId Int
   date DateTime @db.Date
-  clock_in DateTime @db.Time
-  clock_out DateTime? @db.Time
+  clock_in DateTime 
+  clock_out DateTime? 
   worker User @relation("WorkerShift", fields: [workerId], references: [id])
   @@index([workerId]) 
 }

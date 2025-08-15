@@ -10,7 +10,7 @@ import { TabContent } from 'reactstrap';
 const ManagerTable = () => {
     const [dataSource, setDataSource] = useState(null);
     const today = dayjs().format("DD-MM-YY");
-      const formattedToday = dayjs().format("YYYY-MM-DD");
+    const formattedToday = dayjs().format("YYYY-MM-DD");
   const {data, error, loading} = useQuery(FETCH_ACTIVE_SHIFTS,{
     variables:{date: formattedToday}
   });
