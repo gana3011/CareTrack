@@ -8,8 +8,8 @@ import { CLOCK_IN, CLOCK_OUT, FETCH_USER_SHIFTS_BY_WEEK } from '@/lib/graphql-op
 
 
 const WorkerTable = ({getLocation, userLocation}) => {
-  const [clockIn] = useMutation(CLOCK_IN);
-  const [clockOut ] = useMutation(CLOCK_OUT)
+  const [clockIn, {clockInData, clockInError, clockInLoading}] = useMutation(CLOCK_IN);
+  const [clockOut, {clockOutData, clockOutError, clockOutLoading} ] = useMutation(CLOCK_OUT)
   const [dataSource, setDataSource] = useState([]);
   const today = dayjs().format("DD-MM-YY");
   const formattedToday = dayjs().format("YYYY-MM-DD");
@@ -117,8 +117,8 @@ const WorkerTable = ({getLocation, userLocation}) => {
                 return value ? (
                     value
                 ) : (
-                    <Button type="primary" onClick={()=>handleClockIn(record)}>
-                        Clock In
+                    <Button type="primary" disabled={clockInLoading} onClick={()=>handleClockIn(record)}>
+                        {clockInLoading?'Wait':'Clock In'}
                     </Button>
                 );
             }
@@ -132,8 +132,8 @@ const WorkerTable = ({getLocation, userLocation}) => {
       render: (value, record) => {
         if (record.date === today && record.clock_in && !record.clock_out) {
           return (
-            <Button danger onClick={()=>handleClockOut(record)}>
-              Clock Out
+            <Button type="primary" disabled = {clockOutLoading} onClick={()=>handleClockOut(record)}>
+              {clockOutLoading? 'Wait' : 'Clock Out'}
             </Button>
           );
         }
