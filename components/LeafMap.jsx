@@ -11,10 +11,10 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
 import { LocationMarker } from "./LocationMarker";
-import L from "leaflet";
 import IntegerStep from "./IntegerStep";
 import { useMutation } from "@apollo/client";
 import { ADD_GEOFENCE } from "@/lib/graphql-operations";
+import { Button, Input } from "antd";
 
 // Component to handle map click
 // const ClickHandler = ({ setUserPosition }) => {
@@ -28,19 +28,18 @@ import { ADD_GEOFENCE } from "@/lib/graphql-operations";
 
 
 export const LeafMap = () => {
-  const [userPosition, setUserPosition] = useState(null);
   const [targetPosition, setTargetPosition] = useState(null); 
   const [circleRadius, setCircleRadius] = useState(1);
-  const [isInside, setIsInside] = useState(false);
+  const [name, setName] = useState('');
   const roadmap = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}";
   const [addGeofence, {data, loading, error}] = useMutation(ADD_GEOFENCE);
 
   const handleSubmit = async (e) =>{
   e.preventDefault();
   try{
-    const response = await addGeofence({
+    await addGeofence({
        variables: {
-    name: "eg",
+    name,
     center: {
       lat: targetPosition.lat,
       lng: targetPosition.lng,
@@ -48,7 +47,7 @@ export const LeafMap = () => {
     radiusMeters: circleRadius * 1000,
   }}
     );
-    console.log(response.data);
+    setName('');
   }
   catch(err){
     console.error(err.message);
@@ -88,13 +87,12 @@ export const LeafMap = () => {
       <div>
        <IntegerStep circleRadius={circleRadius} setCircleRadius={setCircleRadius} />
        <form onSubmit={handleSubmit}>
-      <button type="submit" disabled={loading}>
+      <Input placeholder="Enter location name" value={name} onChange={e=>setName(e.target.value)} />
+      <Button htmlType="submit" type="primary" disabled={loading || !name || !targetPosition}>
         {loading ? 'Adding': 'Add'}
-      </button>
-      
+      </Button>
       {/* {targetPosition && <div>Lat:{targetPosition.lat} Long: {targetPosition.lng}</div>} */}
-      {error && <p>Error: {error.message}</p>}
-      {data && <p>{data.addGeofence.success}</p>}
+      {data?.addGeofence?.message && <p>{data.addGeofence.message}</p>}
     </form>
     </div>
     </>

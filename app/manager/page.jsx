@@ -34,7 +34,6 @@ const items = [
 
 const page = () => {
 
-  const [collapsed, setCollapsed] = useState(false);
   const [activeKey, setActiveKey] = useState("1");
   const {
     token: { colorBgContainer, borderRadiusLG },

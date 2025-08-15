@@ -5,6 +5,7 @@ import { gql } from 'graphql-tag';
 import { cookies } from 'next/headers';
 import dayjs from 'dayjs';
 import weekday from 'dayjs/plugin/weekday';
+import { message } from 'antd';
 
 dayjs.extend(weekday);
 
@@ -39,6 +40,7 @@ const typeDefs = gql`
 
   type SuccessResponse {
     success: Boolean!
+    message: String
     shift: Shift
   }
   
@@ -313,9 +315,6 @@ export const resolvers = {
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
         const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
-        console.log('userId in graphql ', userId);
-        console.log('roles in graphql ', roles);
-
         if (!roles.includes('manager')) {
           throw new Error('Not authorized to add geofence');
         }
@@ -328,20 +327,37 @@ export const resolvers = {
           }
         });
         const id = user.id;
-        let manager = await prisma.geofence.findFirst({
-          where: { managerId: id }
-        });
+        let existing = await prisma.geofence.findUnique({
+          where:{
+            name_managerId: {
+              name,
+              managerId: id
 
-        if (manager) {
-          geo = await prisma.$executeRaw`
-        UPDATE "Geofence"
-        SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-        radius_meters = ${radiusMeters},
-        "updated_at" = NOW()
-        WHERE "managerId" = ${id}
-      `;
-        } else {
-          geo = await prisma.$executeRaw`
+            }
+          }
+        })
+
+        if(existing){
+          return {
+            success: false,
+            message: "A Location with the same name is already managed by you. Give a different name"
+          }
+        }
+
+      //   let manager = await prisma.geofence.findFirst({
+      //     where: { managerId: id }
+      //   });
+
+      //   if (manager) {
+      //     geo = await prisma.$executeRaw`
+      //   UPDATE "Geofence"
+      //   SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
+      //   radius_meters = ${radiusMeters},
+      //   "updated_at" = NOW()
+      //   WHERE "managerId" = ${id}
+      // `;
+      //   } else {
+        geo = await prisma.$executeRaw`
         INSERT INTO "Geofence" (name, "managerId", center, radius_meters,updated_at)
         VALUES (
           ${name},
@@ -351,10 +367,10 @@ export const resolvers = {
           now()
         )
       `;
-          console.log(geo);
-        }
 
-        return { success: true };
+        return { success: true,
+          message: 'Location added successfully'
+        };
       } catch (err) {
         console.error(err);
         throw new Error(err.message);
@@ -368,8 +384,6 @@ export const resolvers = {
         const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
         if (!roles.includes('worker')) throw new Error('Not authorized to clock in');
-
-        console.log(userLocation);
 
         const user = await prisma.user.findUnique({
           where: { userId },
@@ -406,8 +420,6 @@ export const resolvers = {
         const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
         if (!roles.includes('worker')) throw new Error('Not authorized to clock in');
-
-        console.log(userLocation);
 
         const user = await prisma.user.findUnique({
           where: { userId },
