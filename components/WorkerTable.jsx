@@ -112,7 +112,6 @@ if (data?.clockOut?.shift?.clock_out) {
     )
   );
 }
-
       } catch (err) {
         console.error(err.message);
       }

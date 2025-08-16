@@ -31,17 +31,22 @@ const typeDefs = gql`
 
   type Shift {
     id: ID!
-    workerId: Int
-    date: String
-    clock_in: String
+    workerId: Int!
+    date: String!
+    clock_in: String!
     clock_out: String
+    clock_in_location: String!
+    clock_out_location: String
+    clock_in_note: String
+    clock_out_note: String
     user: User
   }
 
   type SuccessResponse {
     success: Boolean!
     message: String
-    shift: Shift
+    shift: Shift,
+    location: String
   }
   
   type DailyAverageHours {
@@ -65,6 +70,7 @@ type StaffTotalHours {
     userByUserId(userId: String!): User
     fetchUserShiftsByWeek(date: String!): [Shift]!
     fetchActiveShifts(date: String!): [Shift]!
+    fetchShiftHistory(date: String!): [Shift]!
     totalHoursPerStaff(date: String!): [StaffTotalHours]!
     peopleClockingInPerDay(date: String!): [DailyPeopleCount]!
     avgHoursPerDay(date: String!): [DailyAverageHours]!
@@ -90,19 +96,18 @@ type StaffTotalHours {
 async function checkIfInside(userLocation) {
   try {
     const geofence = await prisma.$queryRaw`
-        SELECT EXISTS(
-        SELECT 1
-        FROM "Geofence"
-        WHERE ST_DWithin(
-          center,
-          ST_SetSRID(ST_MakePoint(${userLocation.lng}, ${userLocation.lat}), 4326)::geography,
-          radius_meters
-        )
-      ) AS "exists";
+        SELECT "id", "name"
+      FROM "Geofence"
+      WHERE ST_DWithin(
+        center,
+        ST_SetSRID(ST_MakePoint(${userLocation.lng}, ${userLocation.lat}), 4326)::geography,
+        radius_meters
+      )
+      LIMIT 1
+      ;
         `;
-    if (!geofence[0]?.exists) {
-      return false;
-    } else return true;
+      console.log(geofence);
+      return geofence[0];
   } catch (err) {
     console.error(err);
     throw new Error(err.message);
@@ -162,7 +167,6 @@ export const resolvers = {
     fetchActiveShifts: async (_, { date }) => {
       try {
         const cookieStore = await cookies();
-        let userId = JSON.parse(cookieStore.get('userId')?.value || null);
         const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
 
         if (!roles.includes('manager')) {
@@ -171,12 +175,60 @@ export const resolvers = {
 
         const shifts = await prisma.shift.findMany({
           where: {
-            date: new Date(date)
+            date: new Date(date),
+            clock_out: null,
           },
           select: {
             id: true,
             clock_in: true,
+            clock_in_location: true,
+            clock_in_note: true,
+            worker: {
+              select: {
+                name: true,
+                id: true
+              }
+            }
+          }
+        });
+
+        console.log(shifts);
+
+        return shifts.map(s => ({
+          ...s,
+          id: s.id,
+          clock_in: s.clock_in ? dayjs(s.clock_in).format('HH:mm:ss') : null,
+          clock_in_location: s.clock_in_location,
+          clock_in_note: s?.clock_in_note,
+          user: s.worker
+        }));
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    },
+
+    fetchShiftHistory: async (_, { date }) => {
+      try {
+        const cookieStore = await cookies();
+        const roles = JSON.parse(cookieStore.get('roles')?.value || '[]');
+
+        if (!roles.includes('manager')) {
+          throw new Error('Not authorized to add geofence');
+        }
+
+        const shifts = await prisma.shift.findMany({
+          where: {
+            date: new Date(date),
+            clock_out:{not: null},
+          },
+          select: {
+            id: true,
+            clock_in: true,
+            clock_in_location: true,
             clock_out: true,
+            clock_out_location: true,
+            clock_in_note: true,
+            clock_out_note: true,
             worker: {
               select: {
                 name: true,
@@ -190,7 +242,11 @@ export const resolvers = {
           ...s,
           id: s.id,
           clock_in: s.clock_in ? dayjs(s.clock_in).format('HH:mm:ss') : null,
+          clock_in_location: s.clock_in_location,
           clock_out: s.clock_out ? dayjs(s.clock_out).format('HH:mm:ss') : null,
+          clock_out_location: s.clock_out_location,
+          clock_in_note: s?.clock_in_note,
+          clock_out_note: s?.clock_out_note,
           user: s.worker
         }));
       } catch (err) {
@@ -394,9 +450,12 @@ export const resolvers = {
 
         const id = user.id;
 
-        const isInside = await checkIfInside(userLocation);
-        if (!isInside) {
-          return { success: false };
+        const geofence = await checkIfInside(userLocation);
+        console.log(geofence);
+        if (geofence.length==0) {
+          return { success: false,
+            message: 'You need to be inside the perimeter to clock in'
+           };
         }
 
         let shift = await prisma.shift.create({
@@ -404,10 +463,12 @@ export const resolvers = {
             workerId: id,
             date: date,
             clock_in: new Date(),
-            clock_in_note
+            clock_in_note,
+            clock_in_geofenceId: geofence.id,
+            clock_in_location: geofence.name
           }
         });
-        return { success: true, shift };
+        return { success: true, shift , message:'Clocked in'};
       } catch (err) {
         console.error(err);
         throw new Error(err.message);
@@ -431,9 +492,11 @@ export const resolvers = {
 
         const id = user.id;
 
-        const isInside = await checkIfInside(userLocation);
-        if (!isInside) {
-          return { success: false };
+        const geofence = await checkIfInside(userLocation);
+        if (geofence.length==0) {
+          return { success: false,
+            message: 'You need to be inside the perimeter to clock out'
+           };
         }
 
         const openShift = await prisma.shift.findFirst({
@@ -444,13 +507,15 @@ export const resolvers = {
           }
         });
 
-        if (!openShift) throw new Error('Not clocked out');
+        if (!openShift) throw new Error('Not clocked in');
 
         let shift = await prisma.shift.update({
           where: { id: openShift.id },
           data: {
             clock_out: new Date(),
-            clock_out_note
+            clock_out_note,
+            clock_out_geofenceId: geofence.id,
+            clock_out_location: geofence.name
           }
         });
         return { success: true, shift };
