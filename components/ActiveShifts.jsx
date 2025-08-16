@@ -1,34 +1,31 @@
 'use client';
 
-import { FETCH_SHIFT_HISTORY } from '@/lib/graphql-operations';
+import { FETCH_ACTIVE_SHIFTS } from '@/lib/graphql-operations';
 import { useQuery } from '@apollo/client';
 import { Table } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react'
 import { TabContent } from 'reactstrap';
 
-const ManagerTable = () => {
+const ActiveShifts = () => {
     const [dataSource, setDataSource] = useState(null);
     const today = dayjs().format("DD-MM-YY");
     const formattedToday = dayjs().format("YYYY-MM-DD");
-  const {data, error, loading} = useQuery(FETCH_SHIFT_HISTORY,{
+  const {data, error, loading} = useQuery(FETCH_ACTIVE_SHIFTS,{
     variables:{date: formattedToday}
   });
 
   const fetchShifts = () =>{
-    const shiftHistory = data.fetchShiftHistory.map((s)=>{
+    const activeShifts = data.fetchActiveShifts.map((s)=>{
         return{
             key: s.user.id,
             name: s.user.name,
             clock_in: s.clock_in,
             clock_in_location: s.clock_in_location,
             clock_in_note: s?.clock_in_note || '',
-            clock_out: s?.clock_out || '',
-            clock_out_location: s?.clock_out_location || '',
-            clock_out_note: s?.clock_out_note || ''
         }
     })
-    setDataSource(shiftHistory);
+    setDataSource(activeShifts);
   }
   
 const columns = [
@@ -55,44 +52,20 @@ const columns = [
         return value || '-'
     }
   },
-  {
-    title: 'Clock Out',
-    dataIndex: 'clock_out',
-    key: 'clock_out',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-  {
-    title: 'Out Location',
-    dataIndex: 'clock_out_location',
-    key: 'clock_out_location',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-  {
-    title: 'Out Note',
-    dataIndex: 'clock_out_note',
-    key: 'clock_out_note',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
 ];
 
 useEffect(()=>{
-    if(data?.fetchShiftHistory && !loading){
+    if(data?.fetchActiveShifts && !loading){
         fetchShifts();
     }
 },[loading, data]);
 
   return (
     <>
-    <h1>{`Shift History for ${today}`}</h1>
+    <h1>{`Active Shifts for ${today}`}</h1>
     <Table dataSource={dataSource} columns={columns} />
     </>
   )
 }
 
-export default ManagerTable
+export default ActiveShifts

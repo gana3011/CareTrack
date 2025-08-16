@@ -15,6 +15,7 @@ import LeafMapClient from "@/components/LeafMapClient";
 import { useUser } from "@auth0/nextjs-auth0";
 import ManagerTable from "@/components/ManagerTable";
 import DashBoard from "@/components/DashBoard";
+import ActiveShifts from "@/components/ActiveShifts";
 const { Header, Content, Footer, Sider } = Layout;
 
 function getItem(label, key, icon, children) {
@@ -28,8 +29,11 @@ function getItem(label, key, icon, children) {
 
 const items = [
   getItem('Perimeter', '1', <PushpinOutlined />),
-  getItem('Users', '2', <UserOutlined />),
-  getItem('Dashboard', '3', <PieChartOutlined />)
+  getItem('Shifts', 'sub1', <UserOutlined />,[
+    getItem('Active Shift','2'),
+    getItem('Shift History','3')
+  ]),
+  getItem('Dashboard', '4', <PieChartOutlined />)
 ];
 
 const page = () => {
@@ -44,8 +48,10 @@ const page = () => {
       case "1":
         return <LeafMapClient />
       case "2":
-        return <ManagerTable />
+        return <ActiveShifts />
       case "3":
+        return <ManagerTable />
+      case "4":
         return <DashBoard />
       default:
         return <LeafMapClient />

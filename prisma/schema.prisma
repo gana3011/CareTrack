@@ -38,6 +38,8 @@ model Geofence{
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
   manager User @relation("ManagerGeofences", fields:[managerId], references: [id])
+  clock_in_shifts Shift[] @relation("ClockInGeofence")
+  clock_out_shifts Shift[] @relation("ClockOutGeofence")
   @@unique([name, managerId])
 }
 
@@ -45,10 +47,16 @@ model Shift{
   id Int @id @default(autoincrement())
   workerId Int
   date DateTime @db.Date
+  clock_in_geofenceId Int
+  clock_in_location String
+  clock_out_geofenceId Int?
+  clock_out_location String?
   clock_in DateTime 
   clock_out DateTime? 
   clock_in_note String?
   clock_out_note String?
   worker User @relation("WorkerShift", fields: [workerId], references: [id])
+  clock_in_geofence Geofence? @relation("ClockInGeofence", fields: [clock_in_geofenceId], references: [id])
+  clock_out_geofence Geofence? @relation("ClockOutGeofence", fields: [clock_out_geofenceId], references: [id])
   @@index([workerId]) 
 }
