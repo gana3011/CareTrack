@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from "react";
-import { Button, Input, Modal, Table, Spin } from "antd";
+import { Button, Input, Modal, Table, Spin, message } from "antd";
 import dayjs from "dayjs";
 import { useMutation, useQuery } from "@apollo/client";
 import {
@@ -10,7 +10,7 @@ import {
   FETCH_USER_SHIFTS_BY_WEEK,
 } from "@/lib/graphql-operations";
 
-const WorkerTable = ({ getLocation, userLocation }) => {
+const WorkerTable = ({ getLocation, messageApi }) => {
   const [clockIn, { loading: clockInLoading }] = useMutation(CLOCK_IN);
   const [clockOut, { loading: clockOutLoading }] = useMutation(CLOCK_OUT);
   const [pendingAction, setPendingAction] = useState(null);
@@ -33,8 +33,27 @@ const WorkerTable = ({ getLocation, userLocation }) => {
     setOpen(true);
   };
 
+  const success = (content) => {
+    messageApi.open({
+      type: 'success',
+      content: content,
+    });
+  };
+
+  const error = (content) => {
+    messageApi.open({
+      type: 'error',
+      content: content,
+    });
+  };
+
   const generateWeekData = () => {
-    const startOfWeek = dayjs().startOf("week").add(1, "days");
+    let startOfWeek = dayjs().startOf("week").add(1, "day");
+
+    //if today is sunday, calculate previous monday
+    if (dayjs().day() === 0) {
+  startOfWeek = dayjs().subtract(6, "day").startOf("day");
+}
     return Array.from({ length: 7 }, (_, i) => {
       const date = startOfWeek.add(i, "day");
       return {
@@ -88,6 +107,13 @@ const WorkerTable = ({ getLocation, userLocation }) => {
           )
         );
       }
+      if(data?.clockIn.success){
+        success(data?.clockIn.message);
+      }
+      else{
+        error(data?.clockIn.message);
+      }
+
     } catch (err) {
       console.error(err.message);
     }
@@ -112,6 +138,14 @@ const WorkerTable = ({ getLocation, userLocation }) => {
           )
         );
       }
+
+      if(data?.clockOut.success){
+        success(data?.clockOut.message);
+      }
+      else{
+        error(data?.clockOut.message);
+      }
+
     } catch (err) {
       console.error(err.message);
     }
@@ -184,9 +218,9 @@ const WorkerTable = ({ getLocation, userLocation }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-2 md:px-0 py-4">
-      <h1 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800">
+      <h2 className="text-xl text-center md:text-2xl font-semibold mb-4 text-gray-800">
         Your Shifts for the Week
-      </h1>
+      </h2>
       <Spin spinning={loading} tip="Loading...">
         <Table
           dataSource={dataSource}

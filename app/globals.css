@@ -5,3 +5,18 @@
   height: 100% !important;
   z-index: 0;
 }
+
+.custom-menu .ant-menu-item {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 20px !important;
+}
+
+.custom-menu .ant-menu-item-selected {
+  background-color: #1677ff !important;
+  color: #fff !important;
+}
+
+.mobile-menu .ant-menu-overflow {
+  justify-content: center !important;
+}

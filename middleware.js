@@ -36,7 +36,7 @@ export async function middleware(request) {
           roles.includes("manager")
             ? `${request.nextUrl.origin}/manager`
             : roles.includes("worker")
-              ? `${request.nextUrl.origin}/worker/dashboard`
+              ? `${request.nextUrl.origin}/worker`
               : `${request.nextUrl.origin}/auth/login`
         );
 
@@ -83,13 +83,6 @@ export async function middleware(request) {
     if (roles.includes("worker") && pathname.startsWith("/worker")) {
       return NextResponse.next();
     }
-
-    // // Redirect to appropriate dashboard based on role (only for non-dashboard paths)
-    // if (roles.includes("manager") && !pathname.startsWith("/manager")) {
-    //   return NextResponse.redirect(`${request.nextUrl.origin}/manager/dashboard`);
-    // } else if (roles.includes("worker") && !pathname.startsWith("/worker")) {
-    //   return NextResponse.redirect(`${request.nextUrl.origin}/worker/dashboard`);
-    // }
 
     // If no valid role, redirect to login
     if (!roles.includes("manager") && !roles.includes("worker")) {

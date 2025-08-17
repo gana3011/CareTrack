@@ -40,7 +40,7 @@ const DashBoard = () => {
     <div className="p-6">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={12}>
-          <Card className="rounded-2xl shadow-md">
+          <Card className="rounded-2xl text-center shadow-md">
             <Title level={4}>Avg Hours Per Day</Title>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
@@ -59,7 +59,7 @@ const DashBoard = () => {
         </Col>
 
         <Col xs={24} md={12}>
-          <Card className="rounded-2xl shadow-md">
+          <Card className="rounded-2xl text-center shadow-md">
             <Title level={4}>People Clocking in Per Day</Title>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={peopleClockingInPerDay}>
@@ -77,7 +77,7 @@ const DashBoard = () => {
 
       <Row className="mt-6">
         <Col span={24}>
-          <Card className="rounded-2xl shadow-md">
+          <Card className="rounded-2xl text-center shadow-md">
             <Title level={4}>Total Hours Per Staff</Title>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart

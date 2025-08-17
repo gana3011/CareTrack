@@ -43,12 +43,12 @@ const columns = [
     key: 'clock_in',
   },
   {
-    title: 'In Location',
+    title: 'Clock In Location',
     dataIndex: 'clock_in_location',
     key: 'clock_in_location'
   },
   {
-    title: 'In Note',
+    title: 'Clock In Note',
     dataIndex: 'clock_in_note',
     key: 'clock_in_note',
     render: (value, record) => {
@@ -64,7 +64,7 @@ const columns = [
     }
   },
   {
-    title: 'Out Location',
+    title: 'Clock Out Location',
     dataIndex: 'clock_out_location',
     key: 'clock_out_location',
     render: (value, record) => {
@@ -72,7 +72,7 @@ const columns = [
     }
   },
   {
-    title: 'Out Note',
+    title: 'Clock Out Note',
     dataIndex: 'clock_out_note',
     key: 'clock_out_note',
     render: (value, record) => {
@@ -89,7 +89,7 @@ useEffect(()=>{
 
   return (
     <div className="w-full max-w-4xl mx-auto px-2 md:px-0 py-4">
-      <h1 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800">{`Shift History for ${today}`}</h1>
+      <h2 className="text-xl md:text-2xl text-center font-semibold mb-4 text-gray-800">{`Shift History for ${today}`}</h2>
       <Spin spinning={loading} tip="Loading...">
         <Table
           dataSource={dataSource}

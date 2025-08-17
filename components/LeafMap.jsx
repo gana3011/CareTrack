@@ -15,17 +15,32 @@ import { useMutation } from "@apollo/client";
 import { ADD_GEOFENCE } from "@/lib/graphql-operations";
 import { Button, Input, Card } from "antd";
 
-export const LeafMap = () => {
+export const LeafMap = ({messageApi}) => {
   const [targetPosition, setTargetPosition] = useState(null); 
   const [circleRadius, setCircleRadius] = useState(1);
   const [name, setName] = useState('');
   const roadmap = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}";
   const [addGeofence, { data, loading }] = useMutation(ADD_GEOFENCE);
 
+  
+  const success = (content) => {
+    messageApi.open({
+      type: 'success',
+      content: content,
+    });
+  };
+
+  const error = (content) => {
+    messageApi.open({
+      type: 'error',
+      content: content,
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await addGeofence({
+      const {data} = await addGeofence({
         variables: {
           name: name.trim(),
           center: {
@@ -36,6 +51,12 @@ export const LeafMap = () => {
         },
       });
       setName('');
+      if(data?.addGeofence.success){
+        success(data?.addGeofence.message);
+      }
+      else{
+        error(data?.addGeofence.message);
+      }
     } catch (err) {
       console.error(err.message);
     }
@@ -93,10 +114,6 @@ export const LeafMap = () => {
             {loading ? "Adding..." : "Add"}
           </Button>
         </form>
-
-        {data?.addGeofence?.message && (
-          <p className="text-green-600 text-sm mt-2">{data.addGeofence.message}</p>
-        )}
       </Card>
     </div>
   );

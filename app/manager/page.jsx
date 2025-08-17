@@ -6,13 +6,15 @@ import {
   PushpinOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Layout, Menu, theme } from 'antd';
+import { Layout, Menu, message, theme } from 'antd';
 import LeafMapClient from "@/components/LeafMapClient";
 import ManagerTable from "@/components/ManagerTable";
 import DashBoard from "@/components/DashBoard";
 import ActiveShifts from "@/components/ActiveShifts";
+import CustomFooter from "@/components/CustomFooter";
+import WorkerTable from "@/components/WorkerTable";
 
-const { Content, Sider } = Layout;
+const { Content, Sider  } = Layout;
 
 function getItem(label, key, icon, children) {
   return { key, icon, children, label };
@@ -23,13 +25,15 @@ const items = [
   getItem('Shifts', 'sub1', <UserOutlined />, [
     getItem('Active Shift', '2'),
     getItem('Shift History', '3'),
+    getItem('Add Shift','4')
   ]),
-  getItem('Dashboard', '4', <PieChartOutlined />),
+  getItem('Dashboard', '5', <PieChartOutlined />),
 ];
 
 const Page = () => {
   const [activeKey, setActiveKey] = useState("1");
   const [isMobile, setIsMobile] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const {
     token: { colorBgContainer },
@@ -46,22 +50,27 @@ const Page = () => {
 
   const renderComponent = () => {
     switch (activeKey) {
-      case "1": return <LeafMapClient />;
+      case "1": return <LeafMapClient messageApi={messageApi}/>;
       case "2": return <ActiveShifts />;
       case "3": return <ManagerTable />;
-      case "4": return <DashBoard />;
-      default:  return <LeafMapClient />;
+      case "4": return <WorkerTable messageApi={messageApi}/>
+      case "5": return <DashBoard />;
+      default:  return <LeafMapClient messageApi={messageApi}/>;
     }
   };
 
   return (
-    <Layout>
+    
+    <Layout style={{ minHeight: "100vh"}}>
+      {contextHolder}
       <NavBar />
-    <Layout>
-        {/* Desktop Sidebar */}
+
+      {/* Main layout with sider + content */}
+      <Layout style={{ flex: "1 0 auto" }}>
         {!isMobile && (
-          <Sider theme="light" width={200}>
+          <Sider theme="light" width={200} className="border-r border-gray-200">
             <Menu
+              className="custom-menu"
               theme="light"
               mode="inline"
               defaultSelectedKeys={["1"]}
@@ -71,7 +80,7 @@ const Page = () => {
           </Sider>
         )}
 
-        <Layout style={{ padding: isMobile ? "0" : "0 16px" }}>
+        <Layout  className="bg-white" style={{ padding: isMobile ? "0" : "0 16px" }}>
           {isMobile && (
             <div className="bg-white">
               <Menu
@@ -86,15 +95,20 @@ const Page = () => {
 
           <Content
             style={{
-              minHeight: "100vh",
               background: colorBgContainer,
               padding: "1rem",
+              flex: "1 0 auto",
             }}
           >
             {renderComponent()}
           </Content>
         </Layout>
       </Layout>
+
+      {/* Footer always below sider + content */}
+      <CustomFooter >
+        © {new Date().getFullYear()} CareTrack
+      </CustomFooter>
     </Layout>
   );
 };
