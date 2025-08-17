@@ -186,13 +186,13 @@ User Login Process:
           ▼
 ┌─────────────────────────────┐
 │ User clicks "Login"         │
-│ - Gmail OAuth              │
-│ - Email + Password         │
+│ - Gmail OAuth               │
+│ - Email + Password          │
 └─────────┬───────────────────┘
           │
           ▼
 ┌─────────────────────────────┐
-│ Auth0 Authentication       │
+│ Auth0 Authentication        │
 │ - Validates credentials     │
 │ - Generates JWT tokens      │
 └─────────┬───────────────────┘
