@@ -20,7 +20,7 @@ function getItem(label, key, icon, children) {
 const items = [
   getItem('Perimeter', '1', <PushpinOutlined />),
   getItem('Shifts', 'sub1', <UserOutlined />, [
-    getItem('Active Shift', '2'),
+    getItem('Active Shifts', '2'),
     getItem('Shift History', '3'),
     getItem('Add Shift', '4')
   ]),

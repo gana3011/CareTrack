@@ -103,7 +103,7 @@ const WorkerTable = ({ getLocation, messageApi }) => {
         error(data?.clockIn.message);
       }
     } catch (err) {
-      console.error(err.message);
+      error(err.message);
     }
   };
 
@@ -129,7 +129,7 @@ const WorkerTable = ({ getLocation, messageApi }) => {
         error(data?.clockOut.message);
       }
     } catch (err) {
-      console.error(err.message);
+      error(err.message);
     }
   };
 
@@ -144,7 +144,7 @@ const WorkerTable = ({ getLocation, messageApi }) => {
       setOpen(false);
       setNote('');
     } catch (err) {
-      console.error(err);
+      error(err);
     } finally {
       setConfirmLoading(false);
     }

@@ -52,7 +52,7 @@ export const LeafMap = ({ messageApi }) => {
         error(data?.addGeofence.message);
       }
     } catch (err) {
-      console.error(err.message);
+      error(err.message);
     }
   };
 
