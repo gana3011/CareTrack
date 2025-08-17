@@ -6,7 +6,7 @@ import WorkerTable from '@/components/WorkerTable';
 import { message } from 'antd';
 import React, { useEffect, useState } from 'react';
 
-const page = () => {
+const Page = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
   const getLocation = () => {
@@ -42,7 +42,7 @@ const page = () => {
       <NavBar />
 
       <main className="flex-grow">
-        <WorkerTable getLocation={getLocation} messageApi={messageApi}/>
+        <WorkerTable getLocation={getLocation} messageApi={messageApi} />
       </main>
 
       <CustomFooter />
@@ -50,4 +50,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

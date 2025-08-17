@@ -4,88 +4,88 @@ import { FETCH_SHIFT_HISTORY } from '@/lib/graphql-operations';
 import { useQuery } from '@apollo/client';
 import { Table, Spin } from 'antd';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { TabContent } from 'reactstrap';
 
 const ManagerTable = () => {
-    const [dataSource, setDataSource] = useState(null);
-    const today = dayjs().format("DD-MM-YY");
-    const formattedToday = dayjs().format("YYYY-MM-DD");
-  const {data, error, loading} = useQuery(FETCH_SHIFT_HISTORY,{
-    variables:{date: formattedToday}
+  const [dataSource, setDataSource] = useState(null);
+  const today = dayjs().format('DD-MM-YY');
+  const formattedToday = dayjs().format('YYYY-MM-DD');
+  const { data, error, loading } = useQuery(FETCH_SHIFT_HISTORY, {
+    variables: { date: formattedToday }
   });
 
-  const fetchShifts = () =>{
-    const shiftHistory = data.fetchShiftHistory.map((s)=>{
-        return{
-            key: s.user.id,
-            name: s.user.name,
-            clock_in: s.clock_in,
-            clock_in_location: s.clock_in_location,
-            clock_in_note: s?.clock_in_note || '',
-            clock_out: s?.clock_out || '',
-            clock_out_location: s?.clock_out_location || '',
-            clock_out_note: s?.clock_out_note || ''
-        }
-    })
+  const fetchShifts = () => {
+    const shiftHistory = data.fetchShiftHistory.map(s => {
+      return {
+        key: s.user.id,
+        name: s.user.name,
+        clock_in: s.clock_in,
+        clock_in_location: s.clock_in_location,
+        clock_in_note: s?.clock_in_note || '',
+        clock_out: s?.clock_out || '',
+        clock_out_location: s?.clock_out_location || '',
+        clock_out_note: s?.clock_out_note || ''
+      };
+    });
     setDataSource(shiftHistory);
-  }
-  
-const columns = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
-  },
-  {
-    title: 'Clock In',
-    dataIndex: 'clock_in',
-    key: 'clock_in',
-  },
-  {
-    title: 'Clock In Location',
-    dataIndex: 'clock_in_location',
-    key: 'clock_in_location'
-  },
-  {
-    title: 'Clock In Note',
-    dataIndex: 'clock_in_note',
-    key: 'clock_in_note',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-  {
-    title: 'Clock Out',
-    dataIndex: 'clock_out',
-    key: 'clock_out',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-  {
-    title: 'Clock Out Location',
-    dataIndex: 'clock_out_location',
-    key: 'clock_out_location',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-  {
-    title: 'Clock Out Note',
-    dataIndex: 'clock_out_note',
-    key: 'clock_out_note',
-    render: (value, record) => {
-        return value || '-'
-    }
-  },
-];
+  };
 
-useEffect(()=>{
-    if(data?.fetchShiftHistory && !loading){
-        fetchShifts();
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name'
+    },
+    {
+      title: 'Clock In',
+      dataIndex: 'clock_in',
+      key: 'clock_in'
+    },
+    {
+      title: 'Clock In Location',
+      dataIndex: 'clock_in_location',
+      key: 'clock_in_location'
+    },
+    {
+      title: 'Clock In Note',
+      dataIndex: 'clock_in_note',
+      key: 'clock_in_note',
+      render: (value, record) => {
+        return value || '-';
+      }
+    },
+    {
+      title: 'Clock Out',
+      dataIndex: 'clock_out',
+      key: 'clock_out',
+      render: (value, record) => {
+        return value || '-';
+      }
+    },
+    {
+      title: 'Clock Out Location',
+      dataIndex: 'clock_out_location',
+      key: 'clock_out_location',
+      render: (value, record) => {
+        return value || '-';
+      }
+    },
+    {
+      title: 'Clock Out Note',
+      dataIndex: 'clock_out_note',
+      key: 'clock_out_note',
+      render: (value, record) => {
+        return value || '-';
+      }
     }
-},[loading, data]);
+  ];
+
+  useEffect(() => {
+    if (data?.fetchShiftHistory && !loading) {
+      fetchShifts();
+    }
+  }, [loading, data]);
 
   return (
     <div className="w-full max-w-4xl mx-auto px-2 md:px-0 py-4">
@@ -99,7 +99,7 @@ useEffect(()=>{
           size="middle"
           scroll={{ x: true }}
           className="w-full custom-blue-table"
-          rowClassName={() => "hover:bg-blue-50"}
+          rowClassName={() => 'hover:bg-blue-50'}
         />
       </Spin>
       <style jsx global>{`
@@ -109,7 +109,7 @@ useEffect(()=>{
         }
       `}</style>
     </div>
-  )
-}
+  );
+};
 
-export default ManagerTable
+export default ManagerTable;

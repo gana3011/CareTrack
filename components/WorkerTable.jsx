@@ -1,14 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import { Button, Input, Modal, Table, Spin, message } from "antd";
-import dayjs from "dayjs";
-import { useMutation, useQuery } from "@apollo/client";
-import {
-  CLOCK_IN,
-  CLOCK_OUT,
-  FETCH_USER_SHIFTS_BY_WEEK,
-} from "@/lib/graphql-operations";
+import React, { useEffect, useState } from 'react';
+import { Button, Input, Modal, Table, Spin, message } from 'antd';
+import dayjs from 'dayjs';
+import { useMutation, useQuery } from '@apollo/client';
+import { CLOCK_IN, CLOCK_OUT, FETCH_USER_SHIFTS_BY_WEEK } from '@/lib/graphql-operations';
 
 const WorkerTable = ({ getLocation, messageApi }) => {
   const [clockIn, { loading: clockInLoading }] = useMutation(CLOCK_IN);
@@ -18,13 +14,13 @@ const WorkerTable = ({ getLocation, messageApi }) => {
   const [open, setOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [dataSource, setDataSource] = useState([]);
-  const [note, setNote] = useState("");
-  const today = dayjs().format("DD-MM-YY");
-  const formattedToday = dayjs().format("YYYY-MM-DD");
+  const [note, setNote] = useState('');
+  const today = dayjs().format('DD-MM-YY');
+  const formattedToday = dayjs().format('YYYY-MM-DD');
 
   const { data, loading } = useQuery(FETCH_USER_SHIFTS_BY_WEEK, {
     variables: { date: formattedToday },
-    skip: !formattedToday,
+    skip: !formattedToday
   });
 
   const showModal = (action, record) => {
@@ -33,49 +29,47 @@ const WorkerTable = ({ getLocation, messageApi }) => {
     setOpen(true);
   };
 
-  const success = (content) => {
+  const success = content => {
     messageApi.open({
       type: 'success',
-      content: content,
+      content: content
     });
   };
 
-  const error = (content) => {
+  const error = content => {
     messageApi.open({
       type: 'error',
-      content: content,
+      content: content
     });
   };
 
   const generateWeekData = () => {
-    let startOfWeek = dayjs().startOf("week").add(1, "day");
+    let startOfWeek = dayjs().startOf('week').add(1, 'day');
 
     //if today is sunday, calculate previous monday
     if (dayjs().day() === 0) {
-  startOfWeek = dayjs().subtract(6, "day").startOf("day");
-}
+      startOfWeek = dayjs().subtract(6, 'day').startOf('day');
+    }
     return Array.from({ length: 7 }, (_, i) => {
-      const date = startOfWeek.add(i, "day");
+      const date = startOfWeek.add(i, 'day');
       return {
-        key: date.format("DD-MM-YY"),
-        date: date.format("DD-MM-YY"),
-        clock_in: "",
-        clock_out: "",
+        key: date.format('DD-MM-YY'),
+        date: date.format('DD-MM-YY'),
+        clock_in: '',
+        clock_out: ''
       };
     });
   };
 
   const fetchWeekData = () => {
     const weekDates = generateWeekData();
-    const mergedData = weekDates.map((weekDate) => {
-      const existing = data.fetchUserShiftsByWeek.find(
-        (d) => d.date === weekDate.date
-      );
+    const mergedData = weekDates.map(weekDate => {
+      const existing = data.fetchUserShiftsByWeek.find(d => d.date === weekDate.date);
       return {
         key: weekDate.date,
         date: weekDate.date,
-        clock_in: existing?.clock_in || "",
-        clock_out: existing?.clock_out || "",
+        clock_in: existing?.clock_in || '',
+        clock_out: existing?.clock_out || ''
       };
     });
 
@@ -88,64 +82,52 @@ const WorkerTable = ({ getLocation, messageApi }) => {
     }
   }, [data, loading]);
 
-  const handleClockIn = async (record) => {
+  const handleClockIn = async record => {
     const location = await getLocation();
-    const timestamp = dayjs().format("HH:mm:ss");
+    const timestamp = dayjs().format('HH:mm:ss');
     try {
       const { data } = await clockIn({
         variables: {
           userLocation: { lat: location.lat, lng: location.lng },
           date: dayjs().toISOString(),
-          clock_in_note: note.trim(),
-        },
+          clock_in_note: note.trim()
+        }
       });
 
       if (data?.clockIn?.shift?.clock_in) {
-        setDataSource((prev) =>
-          prev.map((row) =>
-            row.key === record.key ? { ...row, clock_in: timestamp } : row
-          )
-        );
+        setDataSource(prev => prev.map(row => (row.key === record.key ? { ...row, clock_in: timestamp } : row)));
       }
-      if(data?.clockIn.success){
+      if (data?.clockIn.success) {
         success(data?.clockIn.message);
-      }
-      else{
+      } else {
         error(data?.clockIn.message);
       }
-
     } catch (err) {
       console.error(err.message);
     }
   };
 
-  const handleClockOut = async (record) => {
+  const handleClockOut = async record => {
     const location = await getLocation();
-    const timestamp = dayjs().format("HH:mm:ss");
+    const timestamp = dayjs().format('HH:mm:ss');
     try {
       const { data } = await clockOut({
         variables: {
           userLocation: { lat: location.lat, lng: location.lng },
           date: dayjs().toISOString(),
-          clock_out_note: note.trim(),
-        },
+          clock_out_note: note.trim()
+        }
       });
 
       if (data?.clockOut?.shift?.clock_out) {
-        setDataSource((prev) =>
-          prev.map((row) =>
-            row.key === record.key ? { ...row, clock_out: timestamp } : row
-          )
-        );
+        setDataSource(prev => prev.map(row => (row.key === record.key ? { ...row, clock_out: timestamp } : row)));
       }
 
-      if(data?.clockOut.success){
+      if (data?.clockOut.success) {
         success(data?.clockOut.message);
-      }
-      else{
+      } else {
         error(data?.clockOut.message);
       }
-
     } catch (err) {
       console.error(err.message);
     }
@@ -154,13 +136,13 @@ const WorkerTable = ({ getLocation, messageApi }) => {
   const handleOk = async () => {
     setConfirmLoading(true);
     try {
-      if (pendingAction === "in") {
+      if (pendingAction === 'in') {
         await handleClockIn(pendingRecord);
-      } else if (pendingAction === "out") {
+      } else if (pendingAction === 'out') {
         await handleClockOut(pendingRecord);
       }
       setOpen(false);
-      setNote("");
+      setNote('');
     } catch (err) {
       console.error(err);
     } finally {
@@ -173,54 +155,44 @@ const WorkerTable = ({ getLocation, messageApi }) => {
   };
 
   const columns = [
-    { title: "Date", dataIndex: "date", key: "date" },
+    { title: 'Date', dataIndex: 'date', key: 'date' },
     {
-      title: "Clock In",
-      dataIndex: "clock_in",
-      key: "clock_in",
+      title: 'Clock In',
+      dataIndex: 'clock_in',
+      key: 'clock_in',
       render: (value, record) => {
         if (record.date === today) {
           return value ? (
             value
           ) : (
-            <Button
-              type="primary"
-              disabled={clockInLoading}
-              onClick={() => showModal("in", record)}
-            >
-              {clockInLoading ? "Wait" : "Clock In"}
+            <Button type="primary" disabled={clockInLoading} onClick={() => showModal('in', record)}>
+              {clockInLoading ? 'Wait' : 'Clock In'}
             </Button>
           );
         }
-        return value || "-";
-      },
+        return value || '-';
+      }
     },
     {
-      title: "Clock Out",
-      dataIndex: "clock_out",
-      key: "clock_out",
+      title: 'Clock Out',
+      dataIndex: 'clock_out',
+      key: 'clock_out',
       render: (value, record) => {
         if (record.date === today && record.clock_in && !record.clock_out) {
           return (
-            <Button
-              type="primary"
-              disabled={clockOutLoading}
-              onClick={() => showModal("out", record)}
-            >
-              {clockOutLoading ? "Wait" : "Clock Out"}
+            <Button type="primary" disabled={clockOutLoading} onClick={() => showModal('out', record)}>
+              {clockOutLoading ? 'Wait' : 'Clock Out'}
             </Button>
           );
         }
-        return value || "-";
-      },
-    },
+        return value || '-';
+      }
+    }
   ];
 
   return (
     <div className="w-full max-w-4xl mx-auto px-2 md:px-0 py-4">
-      <h2 className="text-xl text-center md:text-2xl font-semibold mb-4 text-gray-800">
-        Your Shifts for the Week
-      </h2>
+      <h2 className="text-xl text-center md:text-2xl font-semibold mb-4 text-gray-800">Your Shifts for the Week</h2>
       <Spin spinning={loading} tip="Loading...">
         <Table
           dataSource={dataSource}
@@ -230,7 +202,7 @@ const WorkerTable = ({ getLocation, messageApi }) => {
           size="middle"
           scroll={{ x: true }}
           className="w-full custom-blue-table"
-          rowClassName={() => "hover:bg-blue-50"}
+          rowClassName={() => 'hover:bg-blue-50'}
         />
       </Spin>
       <Modal
@@ -240,11 +212,7 @@ const WorkerTable = ({ getLocation, messageApi }) => {
         confirmLoading={confirmLoading}
         onCancel={handleCancel}
       >
-        <Input
-          placeholder="Send an optional note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
+        <Input placeholder="Send an optional note" value={note} onChange={e => setNote(e.target.value)} />
       </Modal>
       <style jsx global>{`
         .custom-blue-table .ant-table-thead > tr > th {

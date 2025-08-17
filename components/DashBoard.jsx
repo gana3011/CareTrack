@@ -14,23 +14,24 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  ResponsiveContainer,
+  ResponsiveContainer
 } from 'recharts';
 import { Row, Col, Card, Typography, Spin } from 'antd';
 
 const { Title } = Typography;
 
 const DashBoard = () => {
-  const today = dayjs().format("YYYY-MM-DD");
+  const today = dayjs().format('YYYY-MM-DD');
   const { data, error, loading } = useQuery(FETCH_DASHBOARD_STATS, {
-    variables: { date: today },
+    variables: { date: today }
   });
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-96">
-      <Spin tip="Loading..." size="large" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Spin tip="Loading..." size="large" />
+      </div>
+    );
 
   const avgHoursPerDay = data?.avgHoursPerDay ?? [];
   const peopleClockingInPerDay = data?.peopleClockingInPerDay ?? [];
@@ -43,10 +44,7 @@ const DashBoard = () => {
           <Card className="rounded-2xl text-center shadow-md">
             <Title level={4}>Avg Hours Per Day</Title>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={avgHoursPerDay}
-                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-              >
+              <LineChart data={avgHoursPerDay} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />

@@ -65,9 +65,6 @@ const typeDefs = gql`
   }
 
   type Query {
-    users: [User!]!
-    user(id: ID!): User
-    userByUserId(userId: String!): User
     fetchUserShiftsByWeek(date: String!): [Shift]!
     fetchActiveShifts(date: String!): [Shift]!
     fetchShiftHistory(date: String!): [Shift]!
@@ -85,7 +82,6 @@ const typeDefs = gql`
       roles: [String!]
       created_at: String
     ): User!
-    updateUser(id: ID!, name: String, email: String, roles: [String!]): User!
     deleteUser(id: ID!): Boolean!
     addGeofence(name: String!, center: PointInput!, radiusMeters: Float!): SuccessResponse
     clockIn(userLocation: PointInput!, date: String!, clock_in_note: String): SuccessResponse
@@ -106,8 +102,7 @@ async function checkIfInside(userLocation) {
       LIMIT 1
       ;
         `;
-    console.log(geofence);
-    return geofence[0];
+    return geofence;
   } catch (err) {
     console.error(err);
     throw new Error(err.message);
@@ -116,20 +111,6 @@ async function checkIfInside(userLocation) {
 
 export const resolvers = {
   Query: {
-    users: async () => {
-      return await prisma.user.findMany();
-    },
-    user: async (_, { id }) => {
-      return await prisma.user.findUnique({
-        where: { id: parseInt(id) }
-      });
-    },
-    userByUserId: async (_, { userId }) => {
-      return await prisma.user.findUnique({
-        where: { userId }
-      });
-    },
-
     fetchUserShiftsByWeek: async (_, { date }) => {
       try {
         const cookieStore = await cookies();
@@ -146,6 +127,7 @@ export const resolvers = {
         const id = user.id;
         let startOfWeek = dayjs(date).startOf('week').add(1, 'day').startOf('day');
 
+        //if sunday get previous monday
         if (dayjs(date).day() === 0) {
           startOfWeek = dayjs(date).subtract(6, 'day').startOf('day');
         }
@@ -370,17 +352,6 @@ export const resolvers = {
         throw new Error(err.message);
       }
     },
-    // updateUser: async (_, { id, name, email, roles }) => {
-    //   const updateData = {};
-    //   if (name !== undefined) updateData.name = name;
-    //   if (email !== undefined) updateData.email = email;
-    //   if (roles !== undefined) updateData.roles = roles;
-
-    //   return await prisma.user.update({
-    //     where: { id: parseInt(id) },
-    //     data: updateData
-    //   });
-    // },
 
     addGeofence: async (_, { name, center, radiusMeters }) => {
       try {
@@ -416,19 +387,6 @@ export const resolvers = {
           };
         }
 
-        //   let manager = await prisma.geofence.findFirst({
-        //     where: { managerId: id }
-        //   });
-
-        //   if (manager) {
-        //     geo = await prisma.$executeRaw`
-        //   UPDATE "Geofence"
-        //   SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-        //   radius_meters = ${radiusMeters},
-        //   "updated_at" = NOW()
-        //   WHERE "managerId" = ${id}
-        // `;
-        //   } else {
         geo = await prisma.$executeRaw`
         INSERT INTO "Geofence" (name, "managerId", center, radius_meters,updated_at)
         VALUES (
@@ -464,11 +422,13 @@ export const resolvers = {
 
         const id = user.id;
 
-        const geofence = await checkIfInside(userLocation);
-        console.log(geofence);
+        let geofence = await checkIfInside(userLocation);
+
         if (geofence.length == 0) {
           return { success: false, message: 'You need to be inside the perimeter to clock in' };
         }
+
+        geofence = geofence[0];
 
         let shift = await prisma.shift.create({
           data: {
@@ -504,10 +464,12 @@ export const resolvers = {
 
         const id = user.id;
 
-        const geofence = await checkIfInside(userLocation);
+        let geofence = await checkIfInside(userLocation);
         if (geofence.length == 0) {
           return { success: false, message: 'You need to be inside the perimeter to clock out' };
         }
+
+        geofence = geofence[0];
 
         const openShift = await prisma.shift.findFirst({
           where: {

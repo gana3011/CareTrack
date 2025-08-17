@@ -22,9 +22,9 @@ export default function RootLayout({ children }) {
       <body>
         <Auth0Provider>
           <ApolloProvider client={client}>
-          <main id="app" className="d-flex flex-column h-100">
-            {children}
-          </main>
+            <main id="app" className="d-flex flex-column h-100">
+              {children}
+            </main>
           </ApolloProvider>
         </Auth0Provider>
       </body>
