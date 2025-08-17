@@ -18,7 +18,7 @@ const NavBar = () => {
   ];
 
   return (
-   <div className="w-full bg-white shadow-md border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+   <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
 
       <Link
         href="/"

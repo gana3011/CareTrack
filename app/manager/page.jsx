@@ -80,18 +80,19 @@ const Page = () => {
           </Sider>
         )}
 
-        <Layout  className="bg-white" style={{ padding: isMobile ? "0" : "0 16px" }}>
-          {isMobile && (
-            <div className="bg-white">
-              <Menu
-                theme="light"
-                mode="horizontal"
-                defaultSelectedKeys={["1"]}
-                items={items}
-                onClick={(e) => setActiveKey(e.key)}
-              />
-            </div>
-          )}
+        <Layout className="bg-white" style={{ padding: isMobile ? "0" : "0 16px" }}>
+  {isMobile && (
+    <div className="bg-white pl-4 pr-4"> 
+      <Menu
+        theme="light"
+        mode="horizontal"
+        defaultSelectedKeys={["1"]}
+        items={items}
+        onClick={(e) => setActiveKey(e.key)}
+      />
+    </div>
+  )}
+
 
           <Content
             style={{
