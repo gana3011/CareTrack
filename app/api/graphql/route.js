@@ -45,24 +45,24 @@ const typeDefs = gql`
   type SuccessResponse {
     success: Boolean!
     message: String
-    shift: Shift,
+    shift: Shift
     location: String
   }
-  
+
   type DailyAverageHours {
-  date: String
-  avg_hours: Float
-}
+    date: String
+    avg_hours: Float
+  }
 
-type DailyPeopleCount {
-  date: String
-  people_count: Int
-}
+  type DailyPeopleCount {
+    date: String
+    people_count: Int
+  }
 
-type StaffTotalHours {
-  name: String
-  total_hours: Float
-}
+  type StaffTotalHours {
+    name: String
+    total_hours: Float
+  }
 
   type Query {
     users: [User!]!
@@ -106,8 +106,8 @@ async function checkIfInside(userLocation) {
       LIMIT 1
       ;
         `;
-      console.log(geofence);
-      return geofence[0];
+    console.log(geofence);
+    return geofence[0];
   } catch (err) {
     console.error(err);
     throw new Error(err.message);
@@ -134,6 +134,9 @@ export const resolvers = {
       try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
+        if (!userId) {
+          throw new Error('User not authenticated');
+        }
         const user = await prisma.user.findUnique({
           where: { userId },
           select: {
@@ -141,7 +144,11 @@ export const resolvers = {
           }
         });
         const id = user.id;
-        const startOfWeek = dayjs(date).weekday(1).startOf('day');
+        let startOfWeek = dayjs(date).startOf('week').add(1, 'day').startOf('day');
+
+        if (dayjs(date).day() === 0) {
+          startOfWeek = dayjs(date).subtract(6, 'day').startOf('day');
+        }
         const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
         const shifts = await prisma.shift.findMany({
           where: {
@@ -176,7 +183,7 @@ export const resolvers = {
         const shifts = await prisma.shift.findMany({
           where: {
             date: new Date(date),
-            clock_out: null,
+            clock_out: null
           },
           select: {
             id: true,
@@ -191,8 +198,6 @@ export const resolvers = {
             }
           }
         });
-
-        console.log(shifts);
 
         return shifts.map(s => ({
           ...s,
@@ -219,7 +224,7 @@ export const resolvers = {
         const shifts = await prisma.shift.findMany({
           where: {
             date: new Date(date),
-            clock_out:{not: null},
+            clock_out: { not: null }
           },
           select: {
             id: true,
@@ -255,7 +260,11 @@ export const resolvers = {
     },
 
     avgHoursPerDay: async (_, { date }) => {
-      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      let startOfWeek = dayjs(date).startOf('week').add(1, 'day').startOf('day');
+
+      if (dayjs(date).day() === 0) {
+        startOfWeek = dayjs(date).subtract(6, 'day').startOf('day');
+      }
       const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
       const avgHoursPerDay = await prisma.$queryRaw`
       SELECT "date",
@@ -266,7 +275,7 @@ export const resolvers = {
       GROUP BY "date"
       ORDER BY "date"
       `;
-      return avgHoursPerDay.map(avg=>({
+      return avgHoursPerDay.map(avg => ({
         ...avg,
         date: dayjs(avg.date).format('DD-MM-YY'),
         avg_hours: avg.avg_hours
@@ -274,7 +283,11 @@ export const resolvers = {
     },
 
     peopleClockingInPerDay: async (_, { date }) => {
-      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      let startOfWeek = dayjs(date).startOf('week').add(1, 'day').startOf('day');
+
+      if (dayjs(date).day() === 0) {
+        startOfWeek = dayjs(date).subtract(6, 'day').startOf('day');
+      }
       const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
 
       const noOfPeople = await prisma.$queryRaw`
@@ -287,7 +300,7 @@ export const resolvers = {
       GROUP BY "date"
       ORDER BY "date";
       `;
-      return noOfPeople.map(no=>({
+      return noOfPeople.map(no => ({
         ...no,
         date: dayjs(no.date).format('DD-MM-YYYY'),
         people_count: Number(no.people_count)
@@ -295,7 +308,11 @@ export const resolvers = {
     },
 
     totalHoursPerStaff: async (_, { date }) => {
-      const startOfWeek = dayjs(date).weekday(1).startOf('day');
+      let startOfWeek = dayjs(date).startOf('week').add(1, 'day').startOf('day');
+
+      if (dayjs(date).day() === 0) {
+        startOfWeek = dayjs(date).subtract(6, 'day').startOf('day');
+      }
       const endOfWeek = startOfWeek.add(6, 'day').endOf('day');
 
       const totalHours = await prisma.$queryRaw`
@@ -384,35 +401,34 @@ export const resolvers = {
         });
         const id = user.id;
         let existing = await prisma.geofence.findUnique({
-          where:{
+          where: {
             name_managerId: {
               name,
               managerId: id
-
             }
           }
-        })
+        });
 
-        if(existing){
+        if (existing) {
           return {
             success: false,
-            message: "A Location with the same name is already managed by you. Give a different name"
-          }
+            message: 'A Location with the same name is already managed by you. Give a different name'
+          };
         }
 
-      //   let manager = await prisma.geofence.findFirst({
-      //     where: { managerId: id }
-      //   });
+        //   let manager = await prisma.geofence.findFirst({
+        //     where: { managerId: id }
+        //   });
 
-      //   if (manager) {
-      //     geo = await prisma.$executeRaw`
-      //   UPDATE "Geofence"
-      //   SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
-      //   radius_meters = ${radiusMeters},
-      //   "updated_at" = NOW()
-      //   WHERE "managerId" = ${id}
-      // `;
-      //   } else {
+        //   if (manager) {
+        //     geo = await prisma.$executeRaw`
+        //   UPDATE "Geofence"
+        //   SET center = ST_SetSRID(ST_MakePoint(${center.lng}, ${center.lat}), 4326)::geography,
+        //   radius_meters = ${radiusMeters},
+        //   "updated_at" = NOW()
+        //   WHERE "managerId" = ${id}
+        // `;
+        //   } else {
         geo = await prisma.$executeRaw`
         INSERT INTO "Geofence" (name, "managerId", center, radius_meters,updated_at)
         VALUES (
@@ -424,9 +440,7 @@ export const resolvers = {
         )
       `;
 
-        return { success: true,
-          message: 'Location added successfully'
-        };
+        return { success: true, message: 'Location added successfully' };
       } catch (err) {
         console.error(err);
         throw new Error(err.message);
@@ -452,10 +466,8 @@ export const resolvers = {
 
         const geofence = await checkIfInside(userLocation);
         console.log(geofence);
-        if (geofence.length==0) {
-          return { success: false,
-            message: 'You need to be inside the perimeter to clock in'
-           };
+        if (geofence.length == 0) {
+          return { success: false, message: 'You need to be inside the perimeter to clock in' };
         }
 
         let shift = await prisma.shift.create({
@@ -468,14 +480,14 @@ export const resolvers = {
             clock_in_location: geofence.name
           }
         });
-        return { success: true, shift , message:'Clocked in'};
+        return { success: true, shift, message: 'Clocked in' };
       } catch (err) {
         console.error(err);
         throw new Error(err.message);
       }
     },
 
-    clockOut: async (_, { userLocation, date, clock_out_note}) => {
+    clockOut: async (_, { userLocation, date, clock_out_note }) => {
       try {
         const cookieStore = await cookies();
         let userId = JSON.parse(cookieStore.get('userId')?.value || null);
@@ -493,17 +505,15 @@ export const resolvers = {
         const id = user.id;
 
         const geofence = await checkIfInside(userLocation);
-        if (geofence.length==0) {
-          return { success: false,
-            message: 'You need to be inside the perimeter to clock out'
-           };
+        if (geofence.length == 0) {
+          return { success: false, message: 'You need to be inside the perimeter to clock out' };
         }
 
         const openShift = await prisma.shift.findFirst({
           where: {
             workerId: id,
             date: date,
-            clock_out: null,
+            clock_out: null
           }
         });
 

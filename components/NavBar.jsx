@@ -1,133 +1,52 @@
-'use  client';
+'use client';
 
-import React, { useState } from 'react';
-import {
-  Collapse,
-  Container,
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem
-} from 'reactstrap';
-import { useUser } from '@auth0/nextjs-auth0';
-
-import PageLink from './PageLink';
-import AnchorLink from './AnchorLink';
+import React from "react";
+import { Dropdown, Avatar, Button } from "antd";
+import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
+import { useUser } from "@auth0/nextjs-auth0";
+import Link from "next/link";
 
 const NavBar = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const { user, isLoading } = useUser();
-  const toggle = () => setIsOpen(!isOpen);
+
+  const menuItems = [
+    {
+      key: "logout",
+      label: <a href="/api/auth/logout">Log out</a>,
+      icon: <LogoutOutlined />,
+    },
+  ];
 
   return (
-    <div className="nav-container">
-      <Navbar color="light" light expand="md">
-        <Container>
-          <NavbarBrand className="logo" />
-          <NavbarToggler onClick={toggle} />
-          <Collapse isOpen={isOpen} navbar>
-            <Nav className="mr-auto" navbar>
-              <NavItem>
-                <PageLink href="/" className="nav-link" testId="navbar-home">
-                  Home
-                </PageLink>
-              </NavItem>
-            </Nav>
-            <Nav className="d-none d-md-block" navbar>
-              {!isLoading && !user && (
-                <NavItem id="qsLoginBtn">
-                  <AnchorLink
-                    href="/auth/login"
-                    className="btn btn-primary btn-margin"
-                    tabIndex={0}
-                    testId="navbar-login-desktop">
-                    Log in
-                  </AnchorLink>
-                </NavItem>
-              )}
-              {user && (
-                <UncontrolledDropdown nav inNavbar>
-                  <DropdownToggle nav caret id="profileDropDown">
-                    <img
-                      src={user.picture}
-                      alt="Profile"
-                      className="nav-user-profile rounded-circle"
-                      width="50"
-                      height="50"
-                      decode="async"
-                    />
-                  </DropdownToggle>
-                  <DropdownMenu>
-                    <DropdownItem header>
-                      {user.name}
-                    </DropdownItem>
-                    <DropdownItem className="dropdown-profile" tag="span">
-                      <PageLink href="/profile">
-                        Profile
-                      </PageLink>
-                    </DropdownItem>
-                    <DropdownItem id="qsLogoutBtn">
-                      <AnchorLink href="/api/auth/logout" icon="power-off" testId="navbar-logout-desktop">
-                        Log out
-                      </AnchorLink>
-                    </DropdownItem>
-                  </DropdownMenu>
-                </UncontrolledDropdown>
-              )}
-            </Nav>
-            {!isLoading && !user && (
-              <Nav className="d-md-none" navbar>
-                <a
-                  href="/auth/login"
-                  className="btn btn-primary btn-block"
-                  tabIndex={0}>
-                  Log in
-                </a>
-              </Nav>
-            )}
-            {user && (
-              <Nav
-                id="nav-mobile"
-                className="d-md-none justify-content-between"
-                navbar>
-                <NavItem>
-                  <span className="user-info">
-                    <img
-                      src={user.picture}
-                      alt="Profile"
-                      className="nav-user-profile d-inline-block rounded-circle mr-3"
-                      width="50"
-                      height="50"
-                      decode="async"
-                    />
-                    <h6 className="d-inline-block">
-                      {user.name}
-                    </h6>
-                  </span>
-                </NavItem>
-                <NavItem>
-                  <PageLink href="/profile" icon="user" testId="navbar-profile-mobile">
-                    Profile
-                  </PageLink>
-                </NavItem>
-                <NavItem id="qsLogoutBtn">
-                  <a
-                    href="/auth/logout"
-                    className="btn btn-link p-0"
-                    icon="power-off">
-                    Log out
-                  </a>
-                </NavItem>
-              </Nav>
-            )}
-          </Collapse>
-        </Container>
-      </Navbar>
+   <div className="w-full bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+
+      <Link
+        href="/"
+        className="text-lg sm:text-2xl font-bold"
+        style={{ color: "#1677ff" }}
+      >
+        CareTrack
+      </Link>
+
+      <div className="flex items-center gap-4">
+        {!isLoading && !user && (
+          <Link href="/auth/login">
+            <Button type="primary" className="rounded-md">
+              Log in
+            </Button>
+          </Link>
+        )}
+        {user && (
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight" arrow trigger={["click"]}>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar src={user.picture} alt="Profile" size="large" />
+              <span className="hidden sm:inline font-medium text-gray-700">
+                {user.name}
+              </span>
+            </div>
+          </Dropdown>
+        )}
+      </div>
     </div>
   );
 };

@@ -2,10 +2,10 @@
 
 import { FETCH_ACTIVE_SHIFTS } from '@/lib/graphql-operations';
 import { useQuery } from '@apollo/client';
-import { Table } from 'antd';
+import { Table, Spin } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react'
-import { TabContent } from 'reactstrap';
+
 
 const ActiveShifts = () => {
     const [dataSource, setDataSource] = useState(null);
@@ -61,10 +61,27 @@ useEffect(()=>{
 },[loading, data]);
 
   return (
-    <>
-    <h1>{`Active Shifts for ${today}`}</h1>
-    <Table dataSource={dataSource} columns={columns} />
-    </>
+    <div className="w-full max-w-3xl mx-auto px-2 md:px-0 py-4">
+      <h2 className="text-xl md:text-2xl text-center font-semibold mb-4 text-gray-800">{`Active Shifts for ${today}`}</h2>
+      <Spin spinning={loading} tip="Loading...">
+        <Table
+          dataSource={dataSource}
+          columns={columns}
+          pagination={true}
+          bordered
+          size="middle"
+          scroll={{ x: true }}
+          className="w-full custom-blue-table"
+          rowClassName={() => "hover:bg-blue-50"}
+        />
+      </Spin>
+      <style jsx global>{`
+        .custom-blue-table .ant-table-thead > tr > th {
+          background-color: #1677ff;
+          color: #fff;
+        }
+      `}</style>
+    </div>
   )
 }
 

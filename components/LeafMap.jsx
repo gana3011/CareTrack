@@ -1,11 +1,10 @@
 'use client';
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import {
   MapContainer,
   TileLayer,
-  Marker,
   ZoomControl,
-  useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
@@ -14,57 +13,59 @@ import { LocationMarker } from "./LocationMarker";
 import IntegerStep from "./IntegerStep";
 import { useMutation } from "@apollo/client";
 import { ADD_GEOFENCE } from "@/lib/graphql-operations";
-import { Button, Input } from "antd";
+import { Button, Input, Card } from "antd";
 
-// Component to handle map click
-// const ClickHandler = ({ setUserPosition }) => {
-//   useMapEvents({
-//     click(e) {
-//       setUserPosition(e.latlng); // set marker position on click
-//     },
-//   });
-//   return null;
-// };
-
-
-export const LeafMap = () => {
+export const LeafMap = ({messageApi}) => {
   const [targetPosition, setTargetPosition] = useState(null); 
   const [circleRadius, setCircleRadius] = useState(1);
   const [name, setName] = useState('');
   const roadmap = "http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}";
-  const [addGeofence, {data, loading, error}] = useMutation(ADD_GEOFENCE);
+  const [addGeofence, { data, loading }] = useMutation(ADD_GEOFENCE);
 
-  const handleSubmit = async (e) =>{
-  e.preventDefault();
-  try{
-    await addGeofence({
-       variables: {
-    name: name.trim(),
-    center: {
-      lat: targetPosition.lat,
-      lng: targetPosition.lng,
-    },
-    radiusMeters: circleRadius * 1000,
-  }}
-    );
-    setName('');
-  }
-  catch(err){
-    console.error(err.message);
-  }
-}
+  
+  const success = (content) => {
+    messageApi.open({
+      type: 'success',
+      content: content,
+    });
+  };
 
-  // Check if target is inside radius
-  // useEffect(() => {
-  //   if (userPosition && targetPosition) {
-  //     const dist = L.latLng(targetPosition).distanceTo(L.latLng(userPosition));
-  //     setIsInside(dist <= circleRadius*1000);
-  //   }
-  // }, [userPosition, targetPosition]);
+  const error = (content) => {
+    messageApi.open({
+      type: 'error',
+      content: content,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const {data} = await addGeofence({
+        variables: {
+          name: name.trim(),
+          center: {
+            lat: targetPosition.lat,
+            lng: targetPosition.lng,
+          },
+          radiusMeters: circleRadius * 1000,
+        },
+      });
+      setName('');
+      if(data?.addGeofence.success){
+        success(data?.addGeofence.message);
+      }
+      else{
+        error(data?.addGeofence.message);
+      }
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
 
   return (
-    <>
-      <div style={{ height: "60vh", borderRadius: "20px", overflow: "hidden"}}>
+    <div className="flex flex-col gap-6">
+      {/* Map container */}
+      <div className="w-full h-[70vh] rounded-2xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-all">
         <MapContainer
           zoom={15}
           minZoom={5}
@@ -74,27 +75,46 @@ export const LeafMap = () => {
         >
           <TileLayer url={roadmap} />
           <ZoomControl position="topright" />
-
-          <LocationMarker circleRadius={circleRadius} setTargetPosition={setTargetPosition} />
-
-          {/* Detect clicks and set target marker */}
-          {/* <ClickHandler setUserPosition={setUserPosition} /> */}
-
-          {/* Render target marker if set */}
-          {/* {userPosition && <Marker position={userPosition} />} */}
+          <LocationMarker 
+            circleRadius={circleRadius} 
+            setTargetPosition={setTargetPosition} 
+          />
         </MapContainer>
       </div>
-      <div>
-       <IntegerStep circleRadius={circleRadius} setCircleRadius={setCircleRadius} />
-       <form onSubmit={handleSubmit}>
-      <Input placeholder="Enter location name" value={name} onChange={e=>setName(e.target.value)} />
-      <Button htmlType="submit" type="primary" disabled={loading || !name || !targetPosition}>
-        {loading ? 'Adding': 'Add'}
-      </Button>
-      {/* {targetPosition && <div>Lat:{targetPosition.lat} Long: {targetPosition.lng}</div>} */}
-      {data?.addGeofence?.message && <p>{data.addGeofence.message}</p>}
-    </form>
+
+      {/* Controls */}
+      <Card className="shadow-sm rounded-xl border border-gray-100">
+        <form 
+          onSubmit={handleSubmit} 
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center"
+        >
+          {/* Column 1: Slider + InputNumber */}
+          <div className="w-full">
+            <IntegerStep 
+              circleRadius={circleRadius} 
+              setCircleRadius={setCircleRadius} 
+            />
+          </div>
+
+          {/* Column 2: Location Name Input */}
+          <Input
+            placeholder="Enter location name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="rounded-md w-full"
+          />
+
+          {/* Column 3: Submit Button */}
+          <Button
+            htmlType="submit"
+            type="primary"
+            disabled={loading || !name || !targetPosition}
+            className="rounded-md px-6 w-full md:w-auto"
+          >
+            {loading ? "Adding..." : "Add"}
+          </Button>
+        </form>
+      </Card>
     </div>
-    </>
   );
 };
